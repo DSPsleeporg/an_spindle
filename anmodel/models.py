@@ -56,7 +56,7 @@ from anmodel import channels
 from anmodel import params
 
 
-class ANmodel():
+class ANmodel:
     """ Averaged Neuron (AN) model.
 
     This model contains 9 types of channels, 3 types of neurotransmitter 

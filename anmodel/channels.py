@@ -23,7 +23,7 @@ os.environ['MKL_NUM_THREADS'] = '1'
 import numpy as np
 from typing import Optional
 
-from anmodel import params
+import params
 
 
 params = params.Constants()

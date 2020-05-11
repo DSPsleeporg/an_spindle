@@ -39,7 +39,7 @@ class WaveCheck:
         self.freq_spike = FreqSpike(samp_freq=samp_freq)
     
     def pattern(self, v: np.ndarray) -> WavePattern:
-        if np.isinf(v) or np.isnan(v):
+        if np.any(np.isinf(v)) or np.any(np.isnan(v)):
             return self.wave_pattern.EXCLUDED
         detv = signal.detrend(v)
         max_potential = max(detv)
@@ -53,9 +53,9 @@ class WaveCheck:
             return self.wave_pattern.EXCLUDED
         elif (maxfre < 0.2) or (numfire < 5 * 2):
             return self.wave_pattern.RESTING
-        elif (0.2 < maxfre < 10.2) and (numfire > 5 * maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire > 5 * 5 * maxfre - 1):
             return self.wave_pattern.SWS
-        elif (0.2 < maxfre < 10.2) and (numfire <= 5 * maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire <= 5 * 5 * maxfre - 1):
             return self.wave_pattern.SWS_FEW_SPIKES
         elif 10.2 < maxfre:
             return self.wave_pattern.AWAKE
@@ -85,8 +85,8 @@ class FreqSpike:
             spike count
         """
         ntraverse = 0
-        ms = self.samp_freq / 1000
-        for i in range(len(v)):
+        ms = int(self.samp_freq / 1000)
+        for i in range(len(v)-1):
             if (v[i]+20) * (v[i+ms]+20) < 0:
                 ntraverse += 1
         nspike = int(ntraverse//2)

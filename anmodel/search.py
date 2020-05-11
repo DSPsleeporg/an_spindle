@@ -39,8 +39,8 @@ from scipy import signal
 from time import time
 from typing import Dict, List, Optional
 
-from anmodel import models
-from anmodel import analysis
+import models
+import analysis
 
 
 class RandomParamSearch():
@@ -55,7 +55,7 @@ class RandomParamSearch():
         model in which parameter search is conducted
     pattern : str
         searched firing pattern
-    ncores : int
+    ncore : int
         number of cores you are going to use
     time : int or str
         how long to run parameter search (hour), default 48 (2 days)
@@ -103,14 +103,14 @@ class RandomParamSearch():
     model : object
         Simulation model object. See anmodel.models.py
     """
-    def __init__(self, model: str, pattern: str='SWS', ncores: int=1, 
-                 time: int=48, samp_freq: int=1000, samp_len: int=10, 
+    def __init__(self, model: str, pattern: str='SWS', ncore: int=1, 
+                 hr: int=48, samp_freq: int=1000, samp_len: int=10, 
                  channel_bool: Optional[List]=None, model_name: Optional[str]=None, 
                  ion: bool=False, concentration: Optional[Dict]=None) -> None:
         self.wave_check = analysis.WaveCheck(samp_freq=samp_freq)
         self.pattern = pattern
-        self.ncores = ncores
-        self.time = int(time)
+        self.ncore = ncore
+        self.hr = int(hr)
         self.samp_freq = samp_freq
         self.samp_len = samp_len
 
@@ -124,7 +124,7 @@ class RandomParamSearch():
             if channel_bool is None:
                 raise TypeError('Designate channel in argument of X model.')
             self.model_name = model_name
-            self.model = models.Xmodel(channel_bool, ion, concentrations)
+            self.model = models.Xmodel(channel_bool, ion, concentration)
 
         self.multi_singleprocess()
 
@@ -142,15 +142,15 @@ class RandomParamSearch():
             now : datetime.datetime
                 datetime.datetime.now() when simulation starts
             time_start : float
-                time.time() when simulation starts
+                time() when simulation starts
             rand_seed : int
                 random seed for generating random parameters. 0 ~ 2**32-1.
         """
         core, now, time_start, rand_seed = args
-        date = f'{now.year}_{now.month}_{now.year}'
-        p = Path.cwd().parent
+        date = f'{now.year}_{now.month}_{now.day}'
+        p = Path.cwd()
         res_p = p / 'result' / f'{self.pattern}_params' / f'{date}_{self.model_name}'
-        res_p.mkdir(exist_ok=True)
+        res_p.mkdir(parents=True, exist_ok=True)
         save_p = res_p / f'{self.pattern}_{date}_{core}.pickle'
 
         param_df = pd.DataFrame([])
@@ -188,8 +188,8 @@ class RandomParamSearch():
                 print(datetime.now(), log)
             
             ## finish random parameter search after "self.time" hours
-            if (md - time_start) > 60 * 60 * self.time:
-                print(f'Core {core}: {self.time} hours have passed, so parameter search has terminated.')
+            if (md - time_start) > 60 * 60 * self.hr:
+                print(f'Core {core}: {self.hr} hours have passed, so parameter search has terminated.')
                 break
 
     ## arguments : 
@@ -198,10 +198,13 @@ class RandomParamSearch():
         args = []
         now = datetime.now()
         time_start = time()
-        for core in range(self.ncores):
+        for core in range(self.ncore):
             args.append((core, now, time_start, np.random.randint(0, 2 ** 32 - 1, 1)))
 
-        print(f'Random search: using {self.ncores} cores to explore {self.pattern}')
-        with Pool(processes=cores) as pool:
+        print(f'Random search: using {self.ncore} cores to explore {self.pattern}')
+        with Pool(processes=self.ncore) as pool:
             pool.map(self.singleprocess, args)
 
+
+if __name__ == '__main__':
+    RandomParamSearch('AN')

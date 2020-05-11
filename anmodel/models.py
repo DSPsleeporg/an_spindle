@@ -52,8 +52,8 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
-from anmodel import channels
-from anmodel import params
+import channels
+import params
 
 
 class ANmodel:
@@ -366,7 +366,7 @@ class ANmodel:
                  - ca / tau_ca)
         return dCadt
 
-    def diff_op(self, args: List) -> List:
+    def diff_op(self, args: List, time: float) -> List:
         """ Differential equations to be solved.
 
         Parameters
@@ -580,13 +580,15 @@ class SANmodel(ANmodel):
         dCadt = -a_Ca * (10.0*area*self.cav.i(v)) - ca/tau_Ca
         return dCadt
 
-    def diff_op(self, args: List) -> List:
+    def diff_op(self, args: List, time: float) -> List:
         """ Differential equations to be solved.
 
         Parameters
         ----------
         args : list (float)
             valuable list in a certain time
+        time : float
+            each time point to solve differential equation
 
         Returns
         ----------
@@ -897,13 +899,15 @@ class Xmodel(ANmodel):
         dCadt = -a_ca * (10.0*area*i_cav) - a_ca*i_nmdar - ca/tau_ca
         return dCadt
 
-    def diff_op(self, args: List) -> List:
+    def diff_op(self, args: List, time: float) -> List:
         """ Differential equations to be solved.
 
         Parameters
         ----------
         args : list (float)
             valuable list in a certain time
+        time : float
+            each time point to solve differential equation
 
         Returns
         ----------

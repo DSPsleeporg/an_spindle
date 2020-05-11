@@ -38,6 +38,8 @@ from scipy.signal import periodogram
 from scipy import signal
 from time import time
 from typing import Dict, List, Optional
+import warnings
+warnings.filterwarnings('ignore')
 
 import models
 import analysis
@@ -165,6 +167,7 @@ class RandomParamSearch():
             new_params = pd.Series(self.model.set_rand_params())
             new_params = pd.DataFrame(new_params).T
             s, info  = self.model.run_odeint()
+            
             if info['message'] == 'Excess work done on this call (perhaps wrong Dfun type).':
                 pass
             
@@ -192,8 +195,6 @@ class RandomParamSearch():
                 print(f'Core {core}: {self.hr} hours have passed, so parameter search has terminated.')
                 break
 
-    ## arguments : 
-    ##   cores : number of cores that are used for calculating 
     def multi_singleprocess(self) -> None:
         args = []
         now = datetime.now()

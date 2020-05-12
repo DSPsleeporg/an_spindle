@@ -47,10 +47,7 @@ import itertools
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
+from typing import Dict, Iterator, List, Optional, Tuple
 
 import channels
 import params
@@ -74,31 +71,31 @@ class ANmodel:
 
     Attributes
     ----------
-    const : object
+    const : anmodel.params.Constants
         contains constants needed for AN model
     ini : list (float)
         initial parameters for differential equations of AN model
-    leak : object
+    leak : anmodel.channels.Leak
         leak channel object
-    nav : object
+    nav : anmodel.channels.NavHH
         Hodgkin-Huxley type voltage-gated sodium channel object
-    kvhh : object
+    kvhh : anmodel.channels.KvHH
         Hodgkin-Huxley type delayed rectifier potassium channel object
-    kva : object
+    kva : anmodel.channels.KvA
         Fast A-type voltage-geted potassium channel object
-    cav : object
+    cav : anmodel.channels.Cav
         voltage-gated calcium channel object
-    nap : object
+    nap : anmodel.channels.NaP
         persistent sodium channel object
-    kca : object
+    kca : anmodel.channels.KCa
         calcium-dependent potassium channel object
-    kir : object
+    kir : anmodel.channels.KIR
         inwardly rectifier potassium channel object
-    ampar : object
+    ampar : anmodel.channels.AMPAR
         AMPA receptor object
-    nmdar : object
+    nmdar : anmodel.channels.NMDAR
         NMDA receptor object
-    gabar : object
+    gabar : anmodel.channels.GABAR
         GABA receptor object
     ion : bool
         whether you make equiribrium potential variable or not
@@ -115,7 +112,7 @@ class ANmodel:
         self.kvhh = channels.KvHH()
         self.kva = channels.KvA()
         self.kvsi = channels.KvSI()
-        self.cav = channels.CaV()
+        self.cav = channels.Cav()
         self.nap = channels.NaP()
         self.kca = channels.KCa()
         self.kir = channels.KIR()
@@ -243,25 +240,25 @@ class ANmodel:
         ----------
         anmodel.search : random parameter search is implemented
         """
-        param_dict = {}
+        param_dict: Dict = {}
 
-        gX_name = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
-                   'g_cav', 'g_kca', 'g_nap', 'g_kir']
-        gX_log = 4 * np.random.rand(9) - 2  # from -2 to 2
-        gX = np.asarray([10**(para) for para in gX_log])  # 0.01 ~ 100
-        gX_dict = zip(gX_name, gX)
+        gX_name: List = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
+                         'g_cav', 'g_kca', 'g_nap', 'g_kir']
+        gX_log: np.ndarray = 4 * np.random.rand(9) - 2  # from -2 to 2
+        gX: np.ndarray = 10 * np.ones(9) ** gX_log  # 0.01 ~ 100
+        gX_itr: Iterator = zip(gX_name, gX)
 
-        gR_name = ['g_ampar', 'g_nmdar', 'g_gabar']
-        gR_log = 4 * np.random.rand(3) - 3  # from -3 to 1
-        gR = np.asarray([10**(para) for para in gR_log])  # 0.001 ~ 10
-        gR_dict = zip(gR_name, gR)
+        gR_name: List = ['g_ampar', 'g_nmdar', 'g_gabar']
+        gR_log: np.ndarray = 4 * np.random.rand(3) - 3  # from -3 to 1
+        gR: np.ndarray = 10 * np.ones(3) ** gR_log  # 0.001 ~ 10
+        gR_itr: Iterator = zip(gR_name, gR)
 
-        tCa_log = 2 * np.random.rand(1) + 1  # from 1 to 3
-        tCa = np.asarray([10**(para) for para in tCa_log])    # 10 ~ 1000
-        tCa_dict = {'t_ca': tCa[0]}
+        tCa_log: float = 2 * np.random.rand(1) + 1  # from 1 to 3
+        tCa: float = 10 ** tCa_log    # 10 ~ 1000
+        tCa_dict: Dict = {'t_ca': tCa}
 
-        param_dict.update(gX_dict)
-        param_dict.update(gR_dict)
+        param_dict.update(gX_itr)
+        param_dict.update(gR_itr)
         param_dict.update(tCa_dict)
         return param_dict
 
@@ -399,7 +396,7 @@ class ANmodel:
         dsGABAdt = self.gabar.dsdt(v=v, s=s_gabar)
         dCadt = self.dCadt(args=ca_args)
         return [dvdt, dhNadt, dnKdt, dhAdt, dmKSdt,
-                dsAMPAdt, dxNMDAdt, dsNMDAdt, dsGABAdt,
+                dsAMPAdt, dxNMDAdt, dsNMDAdt, dsGABAdt, 
                 dCadt]
 
     def run_odeint(self, samp_freq: int=1000, samp_len: int=10) -> Tuple[np.ndarray, Dict]:
@@ -420,8 +417,9 @@ class ANmodel:
             dictionary containing additional output information. 
             see scipy.integrate.odeint() documentation.
         """
-        solvetime = np.linspace(1, 1000*samp_len, samp_freq*samp_len)
-        s, info = odeint(self.diff_op, self.ini, solvetime, atol=1.0e-5, rtol=1.0e-5, full_output=1)
+        solvetime: np.ndarray = np.linspace(1, 1000*samp_len, samp_freq*samp_len)
+        s, info = odeint(self.diff_op, self.ini, solvetime, atol=1.0e-5, rtol=1.0e-5, 
+                         printmessg=False, full_output=True)
         return s, info
 
 
@@ -473,18 +471,18 @@ class SANmodel(ANmodel):
         ----------
         anmodel.search : random parameter search is implemented
         """
-        param_dict = {}
+        param_dict: Dict = {}
 
-        gX_name = ['g_leak', 'g_kvhh', 'g_cav', 'g_kca', 'g_nap']
-        gX_log = 4 * np.random.rand(5) - 2  # from -2 to 2
-        gX = np.asarray([10**(para) for para in gX_log])  # 0.01 ~ 100
-        gX_dict = zip(gX_name,gX)
+        gX_name: List = ['g_leak', 'g_kvhh', 'g_cav', 'g_kca', 'g_nap']
+        gX_log: np.ndarray = 4 * np.random.rand(5) - 2  # from -2 to 2
+        gX: np.ndarray = 10 * np.ones(5) ** gX_log  # 0.01 ~ 100
+        gX_itr: Iterator = zip(gX_name, gX)
 
-        tCa_log = 2 * np.random.rand(1) + 1  # from 1 to 3
-        tCa = np.asarray([10**(para) for para in tCa_log])    # 10 ~ 1000
-        tCa_dict = {'t_Ca': tCa[0]}
+        tCa_log: float = 2 * np.random.rand(1) + 1  # from 1 to 3
+        tCa: float = 10 ** tCa_log    # 10 ~ 1000
+        tCa_dict: Dict = {'t_Ca': tCa}
 
-        param_dict.update(gX_dict)
+        param_dict.update(gX_itr)
         param_dict.update(tCa_dict)
         return param_dict
 
@@ -695,28 +693,28 @@ class Xmodel(ANmodel):
         ----------
         anmodel.search : random parameter search is implemented
         """
-        param_dict = {}
+        param_dict: Dict = {}
 
-        gX_name = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
-                   'g_cav', 'g_kca', 'g_nap', 'g_kir']
-        gX_name = list(itertools.compress(gX_name, list(self.channel_bool.values()[:10])))
-        gX_log = 4 * np.random.rand(len(gX_name)) - 2  # from -2 to 2
-        gX = np.asarray([10**(para) for para in gX_log])  # 0.01 ~ 100
-        gX_dict = zip(gX_name, gX)
+        gX_name: List = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
+                         'g_cav', 'g_kca', 'g_nap', 'g_kir']
+        gX_name: List = list(itertools.compress(gX_name, list(self.channel_bool.values()[:10])))
+        gX_log: np.ndarray = 4 * np.random.rand(len(gX_name)) - 2  # from -2 to 2
+        gX: np.ndarray = 10 * np.ones(len(gX_name)) ** gX_log  # 0.01 ~ 100
+        gX_itr: Iterator = zip(gX_name, gX)
 
-        gR_name = ['g_ampar', 'g_nmdar', 'g_gabar']
-        gR_name = list(itertools.compress(gX_name, list(self.channel_bool.values()[10:13])))
-        gR_log = 4 * np.random.rand(len(gR_name)) - 3  # from -3 to 1
-        gR = np.asarray([10**(para) for para in gR_log])  # 0.001 ~ 10
-        gR_dict = zip(gR_name, gR)
+        gR_name: List = ['g_ampar', 'g_nmdar', 'g_gabar']
+        gR_name: List = list(itertools.compress(gX_name, list(self.channel_bool.values()[10:13])))
+        gR_log: np.ndarray = 4 * np.random.rand(len(gR_name)) - 3  # from -3 to 1
+        gR: np.ndarray = 10 * np.ones(len(gR_name)) ** gR_log  # 0.001 ~ 10
+        gR_itr: Iterator = zip(gR_name, gR)
 
-        param_dict.update(gX_dict)
-        param_dict.update(gR_dict)
+        param_dict.update(gX_itr)
+        param_dict.update(gR_itr)
 
         if self.channel_bool['t_ca']:
-            tCa_log = 2 * np.random.rand(1) + 1  # from 1 to 3
-            tCa = np.asarray([10**(para) for para in tCa_log])    # 10 ~ 1000
-            tCa_dict = {'t_ca': tCa[0]}
+            tCa_log: float = 2 * np.random.rand(1) + 1  # from 1 to 3
+            tCa: float = 10 ** tCa_log    # 10 ~ 1000
+            tCa_dict: Dict = {'t_ca': tCa[0]}
             param_dict.update(tCa_dict)
 
         return param_dict

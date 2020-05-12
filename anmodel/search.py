@@ -149,17 +149,17 @@ class RandomParamSearch():
                 random seed for generating random parameters. 0 ~ 2**32-1.
         """
         core, now, time_start, rand_seed = args
-        date = f'{now.year}_{now.month}_{now.day}'
-        p = Path.cwd()
-        res_p = p / 'result' / f'{self.pattern}_params' / f'{date}_{self.model_name}'
+        date: str = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd()
+        res_p: Path = p / 'result' / f'{self.pattern}_params' / f'{date}_{self.model_name}'
         res_p.mkdir(parents=True, exist_ok=True)
-        save_p = res_p / f'{self.pattern}_{date}_{core}.pickle'
+        save_p: Path = res_p / f'{self.pattern}_{date}_{core}.pickle'
 
-        param_df = pd.DataFrame([])
-        niter = 0  # number of iteration
-        nhit = 0  # number of hits
-        nfail = 0  # number of oscillation
-        st = time()  # start time : updated every 1 hour
+        param_df: pd.DataFrame = pd.DataFrame([])
+        niter: int = 0  # number of iteration
+        nhit: int = 0  # number of hits
+        nfail: int = 0  # number of oscillation
+        st: float = time()  # start time : updated every 1 hour
         np.random.seed(rand_seed)
 
         while True:
@@ -171,8 +171,8 @@ class RandomParamSearch():
             if info['message'] == 'Excess work done on this call (perhaps wrong Dfun type).':
                 pass
             
-            v = s[self.samp_freq*self.samp_len//2:, 0]
-            pattern = self.wave_check.pattern(v=v)
+            v: np.ndarray = s[self.samp_freq*self.samp_len//2:, 0]
+            pattern: analysis.WavePattern = self.wave_check.pattern(v=v)
             if pattern.value == self.pattern:
                 print('Hit!')
                 nhit += 1
@@ -184,7 +184,7 @@ class RandomParamSearch():
             md = time()
             if (md - st) > 60 * 60:  # 1 hour
                 st = time()  # update start time
-                with open(save_p, "wb") as f:
+                with open(str(save_p), "wb") as f:
                     pickle.dump(niter, f)
                     pickle.dump(param_df, f)
                 log = f'Core {core}: {len(param_df)} {self.pattern} parameter sets were pickled.'
@@ -196,9 +196,9 @@ class RandomParamSearch():
                 break
 
     def multi_singleprocess(self) -> None:
-        args = []
-        now = datetime.now()
-        time_start = time()
+        args: List = []
+        now: datetime = datetime.now()
+        time_start: float = time()
         for core in range(self.ncore):
             args.append((core, now, time_start, np.random.randint(0, 2 ** 32 - 1, 1)))
 

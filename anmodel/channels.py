@@ -656,7 +656,7 @@ class KvSI(Base):
         return self.g * m * (v-self.e)
 
 
-class CaV(Base):
+class Cav(Base):
     """ Voltage-gated calcium channel.
 
     Parameters

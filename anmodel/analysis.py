@@ -41,7 +41,7 @@ class WaveCheck:
     def pattern(self, v: np.ndarray) -> WavePattern:
         if np.any(np.isinf(v)) or np.any(np.isnan(v)):
             return self.wave_pattern.EXCLUDED
-        detv = signal.detrend(v)
+        detv: np.ndarray = signal.detrend(v)
         max_potential = max(detv)
         f, spw = periodogram(detv, fs=self.samp_freq)
         maxamp = max(spw)

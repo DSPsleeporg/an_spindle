@@ -146,7 +146,7 @@ class RandomParamSearch():
         core, now, time_start, rand_seed = args
         date: str = f'{now.year}_{now.month}_{now.day}'
         p: Path = Path.cwd()
-        res_p: Path = p / 'result' / f'{self.pattern}_params' / f'{date}_{self.model_name}'
+        res_p: Path = p / 'results' / f'{self.pattern}_params' / f'{date}_{self.model_name}'
         res_p.mkdir(parents=True, exist_ok=True)
         save_p: Path = res_p / f'{self.pattern}_{date}_{core}.pickle'
 

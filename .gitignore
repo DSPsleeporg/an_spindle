@@ -1,5 +1,5 @@
 .DS_Store
 .ipynb_checkpoints/
-anmodel/__pycache__/
-test/
+src/anmodel/__pycache__/
+ipynb/
 result/

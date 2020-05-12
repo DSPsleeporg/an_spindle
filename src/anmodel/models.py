@@ -453,6 +453,11 @@ class ANmodel:
         info: Dict
         s, info = odeint(self.diff_op, self.ini, solvetime, 
                          atol=1.0e-5, rtol=1.0e-5, full_output=True)
+        '''
+        trendy and faster implementation to solve ODE: 
+        from scipy.integrate import solve_ivp
+        s = solve_ivp(self.diff_op, (0, 10000), self.ini, t_eval=solvetime)
+        '''
         return s, info
 
 

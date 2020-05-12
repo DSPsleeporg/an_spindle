@@ -18,7 +18,7 @@ an.set_sws_params()
 s, _ = an.run_odeint()
 plt.plot(s[4999:, 0])
 ```
-![SWS firing (example)](image/sws_firing.png)
+![SWS firing (example)](images/sws_firing.png)
 
 ## References
 - [Tatsuki et al., Neuron, 2016](https://www.cell.com/neuron/fulltext/S0896-6273(16)00169-0?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0896627316001690%3Fshowall%3Dtrue)

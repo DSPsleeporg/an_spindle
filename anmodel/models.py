@@ -514,7 +514,7 @@ class SANmodel(ANmodel):
 
         tCa_log: float = 2 * np.random.rand(1) + 1  # from 1 to 3
         tCa: float = 10 ** tCa_log    # 10 ~ 1000
-        tCa_dict: Dict = {'t_Ca': tCa}
+        tCa_dict: Dict = {'t_ca': tCa}
 
         param_dict.update(gX_itr)
         param_dict.update(tCa_dict)
@@ -537,30 +537,29 @@ class SANmodel(ANmodel):
         self.nap.set_g(params["g_nap"])
         self.tau_ca = params["t_ca"]
 
-    # def set_rand_parmas(self):
-    #     """ Set random parameters to the channels.
-
-    #     Updated from ANmodel.set_rand_param() for SAN model.
-
-    #     Returns
-    #     ----------
-    #     dictionary
-    #         parameter dictionary
-
-    #     See Also
-    #     ----------
-    #     anmodel.search : random parameter search is implemented
-    #     """
-    #     new_params = self.gen_params()
-    #     self.set_params(new_params)
-    #     return new_params
-
     def set_sws_params(self) -> None:
         """ Set typical parameter that recapitulate SWS firing pattern. 
         Updated from ANmodel.set_sws_params() for SAN model.
         """
         typ_params: Dict = params.TypicalParam().san_sws
         self.set_params(typ_params)
+
+    def get_params(self) -> Dict:
+        """ Get current channel conductances.
+
+        Returns
+        ----------
+        dict
+            parameter dictionary
+        """
+        params: Dict = {}
+        params['g_leak'] = self.leak.get_g()
+        params['g_kvhh'] = self.kvhh.get_g()
+        params['g_cav'] = self.cav.get_g()
+        params['g_kca'] = self.kca.get_g()
+        params['g_nap'] = self.nap.get_g()
+        params['t_ca'] = self.tau_ca
+        return params
 
     def dvdt(self, args: List[float]) -> float:
         """ Calculate dv/dt for given parameters.
@@ -745,10 +744,10 @@ class Xmodel(ANmodel):
         param_dict.update(gX_itr)
         param_dict.update(gR_itr)
 
-        if self.channel_bool['t_ca']:
+        if self.channel_bool['ca']:
             tCa_log: float = 2 * np.random.rand(1) + 1  # from 1 to 3
             tCa: float = 10 ** tCa_log    # 10 ~ 1000
-            tCa_dict: Dict = {'t_ca': tCa[0]}
+            tCa_dict: Dict = {'t_ca': tCa}
             param_dict.update(tCa_dict)
 
         return param_dict
@@ -769,9 +768,9 @@ class Xmodel(ANmodel):
             This error occurs when channels you designated when creating X model
             is different from those designated in params.
         """
-        channel_param: List[str]
+        channel_param: str
         for channel_param in list(params.keys())[:-1]:
-            channel_name: List[str] = channel_param[2:]
+            channel_name: str = channel_param[2:]
             if self.channel_bool[channel_name]:
                 self.channel[channel_name].set_g(params[channel_param])
             else:
@@ -781,25 +780,24 @@ class Xmodel(ANmodel):
             self.tau_ca = params['t_ca']
         else:
             self.tau_ca = float('inf')
+
+    def get_params(self) -> Dict:
+        """ Get current channel conductances.
+
+        Returns
+        ----------
+        dict
+            parameter dictionary
+        """
+        params: Dict = {}
+        channel: str
+        for channel in list(self.channel.keys()):
+            if self.channel_bool[channel]:
+                params[channel] = self.channel[channel].get_g()
+        if self.tau != float('inf'):
+            params['t_ca'] = self.tau_ca
+        return params
         
-    # def set_rand_params(self):
-    #     """ Set random parameters to the channels.
-
-    #     Updated from ANmodel.set_rand_param() for X model.
-
-    #     Returns
-    #     ----------
-    #     dictionary
-    #         parameter dictionary
-
-    #     See Also
-    #     ----------
-    #     anmodel.search : random parameter search is implemented
-    #     """
-    #     new_params = self.gen_params()
-    #     self.set_params(new_params)
-    #     return new_params
-
     def dvdt(self, args: Dict) -> float:
         """ Calculate dv/dt for given parameters.
 

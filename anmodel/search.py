@@ -128,8 +128,6 @@ class RandomParamSearch():
             self.model_name = model_name
             self.model = models.Xmodel(channel_bool, ion, concentration)
 
-        self.multi_singleprocess()
-
     def singleprocess(self, args: List) -> None:
         """ Random parameter search using single core.
 
@@ -181,13 +179,13 @@ class RandomParamSearch():
                 nfail += 1
             
             ## save parameters every 1 hour 
-            md = time()
+            md: float = time()
             if (md - st) > 60 * 60:  # 1 hour
-                st = time()  # update start time
+                st: float = time()  # update start time
                 with open(str(save_p), "wb") as f:
                     pickle.dump(niter, f)
                     pickle.dump(param_df, f)
-                log = f'Core {core}: {len(param_df)} {self.pattern} parameter sets were pickled.'
+                log: str = f'Core {core}: {len(param_df)} {self.pattern} parameter sets were pickled.'
                 print(datetime.now(), log)
             
             ## finish random parameter search after "self.time" hours
@@ -208,4 +206,5 @@ class RandomParamSearch():
 
 
 if __name__ == '__main__':
-    RandomParamSearch('AN')
+    rps = RandomParamSearch('AN')
+    rps.multi_singleprocess()

@@ -96,28 +96,105 @@ class Leak(Base):
         super().__init__(g, e)
 
     def i(self, v:float) -> float:
+        """ Calculate current that flows through the channel.
+
+        I = g * (v - e).
+        v : membrane potential
+        e : equiribrium potential (for sodium ion)
+
+        Parameters
+        ----------
+        v : float
+            membrane potential
+
+        Returns
+        ----------
+        float
+            current that flows through the channel
+        """
         return self.g * (v - self.e)
 
-    def set_div(self, vk: float=params.vK, vnal: float=params.vNaL) -> None:
-        self.vk = vk
+    def set_div(self, vnal: float=params.vNaL, vkl: float=params.vK) -> None:
+        """ Setting about deviding leak channel into Na leak and K leak.
+
+        Conductances of leak potassium channel and leak sodium channel are 
+        defined as:
+        gkl = gleak * (vleak - vnal) / (vkl - vnal)
+        gnal = gleak * (vleak - vkl) / (vnal - vkl).
+        These definition sattisfies gleak=gkl+gnal.
+
+        Parameters
+        ----------
+        vk : float
+            equilibrium potential for leak potassium channel
+        vnal : float
+            equilibrium potential for leak sodium channel
+        """
         self.vnal = vnal
-        self.g_k = self.g * (self.e - self.vnal) / (self.vk - self.vnal)
-        self.g_na = self.g * (self.e - self.vk) / (self.vnal - self.vk)
+        self.vkl = vkl
+        self.gnal = self.g * (self.e - self.vkl) / (self.vnal - self.vkl)
+        self.gkl = self.g * (self.e - self.vnal) / (self.vkl - self.vnal)
 
-    def set_gk(self, new_gk: float) -> None:
-        self.g_k = new_gk
+    def set_gna(self, new_gnal: float) -> None:
+        """ Set a new conductance for a leak sodium channel.
 
-    def set_gna(self, new_gna: float) -> None:
-        self.g_na = new_gna
+        Parameters
+        ----------
+        new_gna : float
+            new conductance set for a leak sodium channel
+        """
+        self.gnal = new_gnal
+    
+    def set_gk(self, new_gkl: float) -> None:
+        """ Set a new conductance for a leak potassium channel.
 
-    def i_k(self, v: float) -> float:
-        return self.g_k * (v - self.vk)
+        Parameters
+        ----------
+        new_gk : float
+            new conductance set for a leak potassium channel
+        """
+        self.gkl = new_gkl
 
-    def i_na(self, v: float) -> float:
-        return self.g_na * (v - self.vnal)
+    def ikl(self, v: float) -> float:
+        """ Calculate current that flows through the channel.
+
+        I = g * (v - e).
+        v : membrane potential
+        e : equiribrium potential (for sodium ion)
+
+        Parameters
+        ----------
+        v : float
+            membrane potential
+
+        Returns
+        ----------
+        float
+            current that flows through the channel
+        """
+        return self.gkl * (v - self.vkl)
+
+    def inal(self, v: float) -> float:
+        """ Calculate current that flows through the channel.
+
+        I = g * (v - e).
+        v : membrane potential
+        e : equiribrium potential (for sodium ion)
+
+        Parameters
+        ----------
+        v : float
+            membrane potential
+
+        Returns
+        ----------
+        float
+            current that flows through the channel
+        """
+        return self.gnal * (v - self.vnal)
     
     def i_div(self, v: float) -> float:
-        return self.g_k * (v - self.vk) + self.g_na * (v - self.vnal)
+        return self.inal(v) + self.ikl(v)
 
 
 class NavHH(Base):

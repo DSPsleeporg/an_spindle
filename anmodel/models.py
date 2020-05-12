@@ -305,6 +305,30 @@ class ANmodel:
         typ_params: Dict = params.TypicalParam().an_sws
         self.set_params(typ_params)
 
+    def get_params(self) -> Dict:
+        """ Get current channel conductances.
+
+        Returns
+        ----------
+        dict
+            parameter dictionary
+        """
+        params: Dict = {}
+        params['g_leak']: float = self.leak.get_g()
+        params['g_nav']: float = self.nav.get_g()
+        params['g_kvhh']: float = self.kvhh.get_g()
+        params['g_kva']: float = self.kva.get_g()
+        params['g_kvsi']: float = self.kvsi.get_g()
+        params['g_cav']: float = self.cav.get_g()
+        params['g_kca']: float = self.kca.get_g()
+        params['g_nap']: float = self.nap.get_g()
+        params['g_kir']: float = self.kir.get_g()
+        params['g_ampar']: float = self.ampar.get_g()
+        params['g.nmdar']: float = self.nmdar.get_g()
+        params['g_gabar']: float = self.gabar.get_g()
+        params['t_Ca']: float = self.tau_ca
+        return params
+
     def dvdt(self, args: List[float]) -> float:
         """ Calculate dv/dt for given parameters.
 
@@ -353,7 +377,7 @@ class ANmodel:
         float
             dCa/dt
         """
-        v, ca, s_nmdar = args
+        v, s_nmdar, ca = args
         a_ca: float = self.params.a_ca
         area: float = self.params.area
         tau_ca: float= self.tau_ca
@@ -394,9 +418,17 @@ class ANmodel:
         dsNMDAdt: float = self.nmdar.dsdt(v=v, s=s_nmdar, x=x_nmdar)
         dsGABAdt: float = self.gabar.dsdt(v=v, s=s_gabar)
         dCadt: float = self.dCadt(args=ca_args)
-        return [dvdt, dhNadt, dnKdt, dhAdt, dmKSdt,
-                dsAMPAdt, dxNMDAdt, dsNMDAdt, dsGABAdt, 
-                dCadt]
+        return [dvdt, 
+                dhNadt, 
+                dnKdt, 
+                dhAdt, 
+                dmKSdt,
+                dsAMPAdt, 
+                dxNMDAdt, 
+                dsNMDAdt, 
+                dsGABAdt, 
+                dCadt,
+                ]
 
     def run_odeint(self, samp_freq: int=1000, samp_len: int=10) -> (np.ndarray, Dict):
         """ Solve differential equations of diff_op.
@@ -419,8 +451,8 @@ class ANmodel:
         solvetime: np.ndarray = np.linspace(1, 1000*samp_len, samp_freq*samp_len)
         s: np.ndarray
         info: Dict
-        s, info = odeint(self.diff_op, self.ini, solvetime, atol=1.0e-5, rtol=1.0e-5, 
-                         printmessg=False, full_output=True)
+        s, info = odeint(self.diff_op, self.ini, solvetime, 
+                         atol=1.0e-5, rtol=1.0e-5, full_output=True)
         return s, info
 
 
@@ -867,11 +899,11 @@ class Xmodel(ANmodel):
 
         Parameters
         ----------
-        args : dictionary\
-            keys : str\
-                names of variables for the differential equations\
-            values : float\
-                values of variables for the differential equations\
+        args : dictionary\\
+            keys : str\\
+                names of variables for the differential equations\\
+            values : float\\
+                values of variables for the differential equations\\
 
         Returns
         ----------

@@ -11,7 +11,7 @@ an.set_sws_params()
 s, _ = an.run_odeint()
 plt.plot(s[4999:, 0])
 ```
-####PASTE IMAGE####
+![SWS firing (example)](image/sws_firing.png)
 
 ## Authors
 - Fumiya Tatsuki

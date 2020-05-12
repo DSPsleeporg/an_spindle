@@ -61,6 +61,16 @@ class Base:
         """
         self.g = new_g
 
+    def get_g(self) -> float:
+        ''' Get current channel conductance value.
+
+        Returns
+        ----------
+        float
+            current conductance
+        '''
+        return self.g
+
     def set_e(self, new_e: float) -> None:
         """ Set a new equiribrium potential for a channel
 

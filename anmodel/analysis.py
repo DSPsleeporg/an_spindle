@@ -29,7 +29,7 @@ from scipy import signal
 
 
 class WavePattern(Flag):
-    """
+    """ Enumeration class that distinguish different wave pattern.
     """
     SWS = 'SWS'
     SWS_FEW_SPIKES = 'SWS_FEW_SPIKES'

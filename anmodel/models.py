@@ -5,22 +5,21 @@ This is the model module for Averaged Neuron (AN) model. In this module, you
 can simulate previous models (AN model: Tatsuki et al., 2016 and SAN model: 
 Yoshida et al., 2018), and various models with 'X model' based on channel 
 and parameter modules. Also, intracellular and extracellular ion concentration
-can be taken into consideration using Nernst equation (See Ramussen et al., 2017)\
+can be taken into consideration using Nernst equation (See Ramussen et al., 2017)\\
 
-
-Models\
-AN model : This model contains 9 types of channels, 3 types of neurotransmitter 
-           receptors, and a type of pumps. It has 10 differential equations.
-           See Tatsuki et al., 2016 and Yoshida et al., 2018.\
-SAN model : This model contains 5 types of channels and a type of pumps. It has
-            only three differential equations. This is the simplest model which 
-            can recapitulate slow wave sleep (SWS) firing pattern.
-            See Yoshida et al., 2018\
-X model : We can create X model by choosing arbitrary channels, neurotransmitter
-          receptors and pumps based on channels module. This model would help you
-          a lot when you want to simplify AN model which recapitulate
-          a certain firing pattern.
-
+Models\\
+AN model : \\
+This model contains 9 types of channels, 3 types of neurotransmitter receptors, 
+and a type of pumps. It has 10 differential equations. See Tatsuki et al., 2016 
+and Yoshida et al., 2018.\\
+SAN model : \\
+This model contains 5 types of channels and a type of pumps. It has only three 
+differential equations. This is the simplest model which can recapitulate slow 
+wave sleep (SWS) firing pattern. See Yoshida et al., 2018.\\
+X model : \\
+We can create X model by choosing arbitrary channels, neurotransmitter receptors 
+and pumps based on channels module. This model would help you a lot when you want 
+to simplify AN model which recapitulate a certain firing pattern.\\
 
 ENJOY YOUR SIMULATION WITH AVERAGED NEURON MODEL!!!!
 """
@@ -47,7 +46,7 @@ import itertools
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
-from typing import Dict, Iterator, List, Optional, Tuple
+from typing import Dict, Iterator, List, Optional
 
 import channels
 import params
@@ -148,17 +147,17 @@ class ANmodel:
         concentrations : list
             dictionary of ion concentrations
         """
-        r = self.ion_params.r
-        t = self.ion_params.t
-        f = self.ion_params.f
-        ex_na = concentration['ex_na']
-        in_na = concentration['in_na']
-        ex_k = concentration['ex_k']
-        in_k = concentration['in_k']
-        ex_cl = concentration['ex_cl']
-        in_cl = concentration['in_cl']
-        ex_ca = concentration['ex_ca']
-        in_ca = concentration['in_ca']
+        r: float = self.ion_params.r
+        t: float = self.ion_params.t
+        f: float = self.ion_params.f
+        ex_na: float = concentration['ex_na']
+        in_na: float = concentration['in_na']
+        ex_k: float = concentration['ex_k']
+        in_k: float = concentration['in_k']
+        ex_cl: float = concentration['ex_cl']
+        in_cl: float = concentration['in_cl']
+        ex_ca: float = concentration['ex_ca']
+        in_ca: float = concentration['in_ca']
 
         def __v(pk: float, pna: float, pcl: float, pca: float) -> float:
             """ calculate equilibrium potential with multiple kinds of ions
@@ -184,13 +183,13 @@ class ANmodel:
             v = r * t / f * np.log(ex_ion/in_ion) * 1000
             return v
 
-        vNa = r * t / f * np.log(ex_na/in_na) * 1000
-        vK = r * t / f * np.log(ex_k/in_k) * 1000
-        vCa = r * t / (f * 2) * np.log(ex_ca / in_ca) * 1000
-        vL = __v(pk=1., pna=0.08, pcl=0.1, pca=0.)
-        vAMPA = __v(pk=1., pna=1., pcl=0., pca=0.)
-        vNMDA = __v(pk=1., pna=1., pcl=0., pca=1.)
-        vGABA = r * t / f * np.log(ex_cl/in_cl) * 1000
+        vNa: float = r * t / f * np.log(ex_na/in_na) * 1000
+        vK: float = r * t / f * np.log(ex_k/in_k) * 1000
+        vCa: float = r * t / (f * 2) * np.log(ex_ca / in_ca) * 1000
+        vL: float = __v(pk=1., pna=0.08, pcl=0.1, pca=0.)
+        vAMPA: float = __v(pk=1., pna=1., pcl=0., pca=0.)
+        vNMDA: float = __v(pk=1., pna=1., pcl=0., pca=1.)
+        vGABA: float = r * t / f * np.log(ex_cl/in_cl) * 1000
 
         self.leak.set_e(new_e=vL)
         self.nav.set_e(new_e=vNa)
@@ -215,11 +214,11 @@ class ANmodel:
         in_ca : float
             concentration of intracellular calcium
         """
-        r = self.ion_params.r
-        t = self.ion_params.t
-        f = self.ion_params.f
-        ex_ca = self.concentration['ex_na']
-        vCa = r * t / (f * 2) * np.log(ex_ca / in_ca) * 1000
+        r: float = self.ion_params.r
+        t: float = self.ion_params.t
+        f: float = self.ion_params.f
+        ex_ca: float = self.concentration['ex_na']
+        vCa: float = r * t / (f * 2) * np.log(ex_ca / in_ca) * 1000
         self.cav.set_e(new_e=vCa)
 
     def gen_params(self) -> Dict:
@@ -242,13 +241,13 @@ class ANmodel:
         """
         param_dict: Dict = {}
 
-        gX_name: List = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
+        gX_name: List[str] = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
                          'g_cav', 'g_kca', 'g_nap', 'g_kir']
         gX_log: np.ndarray = 4 * np.random.rand(9) - 2  # from -2 to 2
         gX: np.ndarray = 10 * np.ones(9) ** gX_log  # 0.01 ~ 100
         gX_itr: Iterator = zip(gX_name, gX)
 
-        gR_name: List = ['g_ampar', 'g_nmdar', 'g_gabar']
+        gR_name: List[str] = ['g_ampar', 'g_nmdar', 'g_gabar']
         gR_log: np.ndarray = 4 * np.random.rand(3) - 3  # from -3 to 1
         gR: np.ndarray = 10 * np.ones(3) ** gR_log  # 0.001 ~ 10
         gR_itr: Iterator = zip(gR_name, gR)
@@ -296,17 +295,17 @@ class ANmodel:
         ----------
         anmodel.search : random parameter search is implemented
         """
-        new_params = self.gen_params()
+        new_params: Dict = self.gen_params()
         self.set_params(new_params)
         return new_params
 
     def set_sws_params(self) -> None:
         """ Set typical parameter that recapitulate SWS firing pattern.
         """
-        typ_params = params.TypicalParam().an_sws
+        typ_params: Dict = params.TypicalParam().an_sws
         self.set_params(typ_params)
 
-    def dvdt(self, args: List) -> float:
+    def dvdt(self, args: List[float]) -> float:
         """ Calculate dv/dt for given parameters.
 
         Membrane potential changes over time dependent on currents that
@@ -338,7 +337,7 @@ class ANmodel:
                 + self.gabar.i(v, s=s_gabar))) 
                 / (10.0*self.params.cm*self.params.area))
     
-    def dCadt(self, args: List) -> float:
+    def dCadt(self, args: List[float]) -> float:
         """ Calculate dCa/dt for given parameters.
 
         Intracellular calcium changes over time dependent on CaV channel, 
@@ -355,15 +354,15 @@ class ANmodel:
             dCa/dt
         """
         v, ca, s_nmdar = args
-        a_ca = self.params.a_ca
-        area = self.params.area
-        tau_ca = self.tau_ca
-        dCadt = (- a_ca * (10.0*area*self.cav.i(v))
-                 - a_ca * self.nmdar.i(v, s=s_nmdar)
-                 - ca / tau_ca)
+        a_ca: float = self.params.a_ca
+        area: float = self.params.area
+        tau_ca: float= self.tau_ca
+        dCadt: float = (- a_ca * (10.0*area*self.cav.i(v))
+                        - a_ca * self.nmdar.i(v, s=s_nmdar)
+                        - ca / tau_ca)
         return dCadt
 
-    def diff_op(self, args: List, time: float) -> List:
+    def diff_op(self, args: List[float], time: float) -> List[float]:
         """ Differential equations to be solved.
 
         Parameters
@@ -376,30 +375,30 @@ class ANmodel:
             additional argument to pass
         Returns
         ----------
-        list
+        list (float)
             list of variables differentiated by t
         """
         v, h_nav, n_kvhh, h_kva, m_kvsi, s_ampar, x_nmdar, s_nmdar, s_gabar, ca = args
-        ca_args = [v, s_nmdar, ca]
+        ca_args: List[float] = [v, s_nmdar, ca]
 
         if self.ion:
             self.set_vCa(in_ca=ca)
 
-        dvdt = self.dvdt(args=args)
-        dhNadt = self.nav.dhdt(v=v, h=h_nav)
-        dnKdt = self.kvhh.dndt(v=v, n=n_kvhh)
-        dhAdt = self.kva.dhdt(v=v, h=h_kva)
-        dmKSdt = self.kvsi.dmdt(v=v, m=m_kvsi)
-        dsAMPAdt = self.ampar.dsdt(v=v, s=s_ampar)
-        dxNMDAdt = self.nmdar.dxdt(v=v, x=x_nmdar)
-        dsNMDAdt = self.nmdar.dsdt(v=v, s=s_nmdar, x=x_nmdar)
-        dsGABAdt = self.gabar.dsdt(v=v, s=s_gabar)
-        dCadt = self.dCadt(args=ca_args)
+        dvdt: float = self.dvdt(args=args)
+        dhNadt: float = self.nav.dhdt(v=v, h=h_nav)
+        dnKdt: float = self.kvhh.dndt(v=v, n=n_kvhh)
+        dhAdt: float = self.kva.dhdt(v=v, h=h_kva)
+        dmKSdt: float = self.kvsi.dmdt(v=v, m=m_kvsi)
+        dsAMPAdt: float = self.ampar.dsdt(v=v, s=s_ampar)
+        dxNMDAdt: float = self.nmdar.dxdt(v=v, x=x_nmdar)
+        dsNMDAdt: float = self.nmdar.dsdt(v=v, s=s_nmdar, x=x_nmdar)
+        dsGABAdt: float = self.gabar.dsdt(v=v, s=s_gabar)
+        dCadt: float = self.dCadt(args=ca_args)
         return [dvdt, dhNadt, dnKdt, dhAdt, dmKSdt,
                 dsAMPAdt, dxNMDAdt, dsNMDAdt, dsGABAdt, 
                 dCadt]
 
-    def run_odeint(self, samp_freq: int=1000, samp_len: int=10) -> Tuple[np.ndarray, Dict]:
+    def run_odeint(self, samp_freq: int=1000, samp_len: int=10) -> (np.ndarray, Dict):
         """ Solve differential equations of diff_op.
 
         Parameters
@@ -418,6 +417,8 @@ class ANmodel:
             see scipy.integrate.odeint() documentation.
         """
         solvetime: np.ndarray = np.linspace(1, 1000*samp_len, samp_freq*samp_len)
+        s: np.ndarray
+        info: Dict
         s, info = odeint(self.diff_op, self.ini, solvetime, atol=1.0e-5, rtol=1.0e-5, 
                          printmessg=False, full_output=True)
         return s, info
@@ -444,10 +445,6 @@ class SANmodel(ANmodel):
     ini : list (float)
         initial parameters for differential equations of SAN model.
         update from initial parameters of AN model
-    bool : list (bool)
-        True means channels incorporated in the model and False means not.
-        The order of the list is the same as other lists or dictionaries
-        that contain channel information in AN model.
     """
     def __init__(self, ion: bool=False, concentration: Optional[Dict]=None) -> None:
         super().__init__(ion=ion, concentration=concentration)
@@ -473,7 +470,7 @@ class SANmodel(ANmodel):
         """
         param_dict: Dict = {}
 
-        gX_name: List = ['g_leak', 'g_kvhh', 'g_cav', 'g_kca', 'g_nap']
+        gX_name: List[str] = ['g_leak', 'g_kvhh', 'g_cav', 'g_kca', 'g_nap']
         gX_log: np.ndarray = 4 * np.random.rand(5) - 2  # from -2 to 2
         gX: np.ndarray = 10 * np.ones(5) ** gX_log  # 0.01 ~ 100
         gX_itr: Iterator = zip(gX_name, gX)
@@ -525,10 +522,10 @@ class SANmodel(ANmodel):
         """ Set typical parameter that recapitulate SWS firing pattern. 
         Updated from ANmodel.set_sws_params() for SAN model.
         """
-        typ_params = params.TypicalParam().san_sws
+        typ_params: Dict = params.TypicalParam().san_sws
         self.set_params(typ_params)
 
-    def dvdt(self, args: List) -> float:
+    def dvdt(self, args: List[float]) -> float:
         """ Calculate dv/dt for given parameters.
 
         Membrane potential changes over time dependent on currents that
@@ -554,7 +551,7 @@ class SANmodel(ANmodel):
                 + self.leak.i(v))) 
                 / (10.0*self.params.cm*self.params.area))
 
-    def dCadt(self, args: List) -> float:
+    def dCadt(self, args: List[float]) -> float:
         """ Calculate dCa/dt for given parameters.
 
         Intracellular calcium changes over time dependent on CaV channel, 
@@ -572,13 +569,13 @@ class SANmodel(ANmodel):
             dCa/dt
         """
         v, ca = args
-        a_Ca = self.params.a_ca
-        area = self.params.area
-        tau_Ca = self.tau_ca
-        dCadt = -a_Ca * (10.0*area*self.cav.i(v)) - ca/tau_Ca
+        a_Ca: float = self.params.a_ca
+        area: float = self.params.area
+        tau_Ca: float = self.tau_ca
+        dCadt: float = -a_Ca * (10.0*area*self.cav.i(v)) - ca/tau_Ca
         return dCadt
 
-    def diff_op(self, args: List, time: float) -> List:
+    def diff_op(self, args: List[float], time: float) -> List[float]:
         """ Differential equations to be solved.
 
         Parameters
@@ -594,10 +591,10 @@ class SANmodel(ANmodel):
             list of variables differentiated by t
         """
         v, nK, ca = args
-        ca_args = [v, ca]
-        dvdt = self.dvdt(args=args)
-        dnKdt = self.kvhh.dndt(v=v, n=nK)
-        dCadt = self.dCadt(args=ca_args)
+        ca_args: List[float] = [v, ca]
+        dvdt: float = self.dvdt(args=args)
+        dnKdt: float = self.kvhh.dndt(v=v, n=nK)
+        dCadt: float = self.dCadt(args=ca_args)
         return [dvdt, dnKdt, dCadt]
 
 
@@ -652,18 +649,18 @@ class Xmodel(ANmodel):
     def __init__(self, channel_bool: List, ion: bool=False, 
                  concentration: Optional[Dict]=None) -> None:
         super().__init__(ion, concentration)
-        channel_name = ['leak', 'nav', 'kvhh', 'kva', 'kvsi', 
-                        'cav', 'nap', 'kca', 'kir', 
-                        'ampar', 'nmdar', 'gabar', 'ca']
-        channel_object = [self.leak, self.nav, self.kvhh, self.kva, self.kvsi,
-                          self.cav, self.nap, self.kca, self.kir, 
-                          self.ampar, self.nmdar, self.gabar]
-        self.channel_bool = dict(zip(channel_name, channel_bool))
-        self.channel = dict(zip(channel_name[:-1], channel_object))
+        channel_name: List[str] = ['leak', 'nav', 'kvhh', 'kva', 'kvsi', 
+                                   'cav', 'nap', 'kca', 'kir', 
+                                   'ampar', 'nmdar', 'gabar', 'ca']
+        channel_object: List = [self.leak, self.nav, self.kvhh, self.kva, self.kvsi,
+                                self.cav, self.nap, self.kca, self.kir, 
+                                self.ampar, self.nmdar, self.gabar]
+        self.channel_bool: Dict = dict(zip(channel_name, channel_bool))
+        self.channel: Dict = dict(zip(channel_name[:-1], channel_object))
 
-        self.ini = self.params.an_ini
-        self.ode_list = ['v', 'h_nav', 'n_kvhh', 'h_kva', 'm_kvsi',
-                         's_ampar', 'x_nmdar', 's_nmdar', 's_gabar', 'ca']
+        self.ini: Dict = self.params.an_ini
+        self.ode_list: List[str] = ['v', 'h_nav', 'n_kvhh', 'h_kva', 'm_kvsi',
+                                    's_ampar', 'x_nmdar', 's_nmdar', 's_gabar', 'ca']
         for i, ode in enumerate(self.ode_list[1:-1]):
             if not self.channel_bool[ode[2:]]:
                 self.ini[i+1] = None
@@ -695,15 +692,15 @@ class Xmodel(ANmodel):
         """
         param_dict: Dict = {}
 
-        gX_name: List = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
-                         'g_cav', 'g_kca', 'g_nap', 'g_kir']
-        gX_name: List = list(itertools.compress(gX_name, list(self.channel_bool.values()[:10])))
+        gX_name: List[str] = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
+                              'g_cav', 'g_kca', 'g_nap', 'g_kir']
+        gX_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values()[:10])))
         gX_log: np.ndarray = 4 * np.random.rand(len(gX_name)) - 2  # from -2 to 2
         gX: np.ndarray = 10 * np.ones(len(gX_name)) ** gX_log  # 0.01 ~ 100
         gX_itr: Iterator = zip(gX_name, gX)
 
-        gR_name: List = ['g_ampar', 'g_nmdar', 'g_gabar']
-        gR_name: List = list(itertools.compress(gX_name, list(self.channel_bool.values()[10:13])))
+        gR_name: List[str] = ['g_ampar', 'g_nmdar', 'g_gabar']
+        gR_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values()[10:13])))
         gR_log: np.ndarray = 4 * np.random.rand(len(gR_name)) - 3  # from -3 to 1
         gR: np.ndarray = 10 * np.ones(len(gR_name)) ** gR_log  # 0.001 ~ 10
         gR_itr: Iterator = zip(gR_name, gR)
@@ -735,8 +732,9 @@ class Xmodel(ANmodel):
             This error occurs when channels you designated when creating X model
             is different from those designated in params.
         """
+        channel_param: List[str]
         for channel_param in list(params.keys())[:-1]:
-            channel_name = channel_param[2:]
+            channel_name: List[str] = channel_param[2:]
             if self.channel_bool[channel_name]:
                 self.channel[channel_name].set_g(params[channel_param])
             else:
@@ -786,64 +784,64 @@ class Xmodel(ANmodel):
             dv/dt for given parameters
         """
         if self.channel_bool['leak']:
-            i_leak = self.leak.i(args['v'])
+            i_leak: float = self.leak.i(args['v'])
         else:
-            i_leak = 0.
+            i_leak: float = 0.
         
         if self.channel_bool['nav']:
-            i_nav = self.nav.i(args['v'], h=args['h_nav'])
+            i_nav: float = self.nav.i(args['v'], h=args['h_nav'])
         else:
-            i_nav = 0.
+            i_nav: float = 0.
 
         if self.channel_bool['kvhh']:
-            i_kvhh = self.kvhh.i(args['v'], n=args['n_kvhh'])
+            i_kvhh: float = self.kvhh.i(args['v'], n=args['n_kvhh'])
         else:
-            i_kvhh = 0.
+            i_kvhh: float = 0.
 
         if self.channel_bool['kva']:
-            i_kva = self.kva.i(args['v'], h=args['h_kva'])
+            i_kva: float = self.kva.i(args['v'], h=args['h_kva'])
         else:
-            i_kva = 0.
+            i_kva: float = 0.
 
         if self.channel_bool['kvsi']:
-            i_kvsi = self.kvsi.i(args['v'], m=args['m_kvsi'])
+            i_kvsi: float = self.kvsi.i(args['v'], m=args['m_kvsi'])
         else:
-            i_kvsi = 0.
+            i_kvsi: float = 0.
 
         if self.channel_bool['cav']:
-            i_cav = self.cav.i(args['v'])
+            i_cav: float = self.cav.i(args['v'])
         else:
-            i_cav = 0.
+            i_cav: float = 0.
 
         if self.channel_bool['kca']:
-            i_kca = self.kca.i(args['v'], ca=args['ca'])
+            i_kca: float = self.kca.i(args['v'], ca=args['ca'])
         else:
-            i_kca = 0.
+            i_kca: float = 0.
         
         if self.channel_bool['nap']:
-            i_nap = self.nap.i(args['v'])
+            i_nap: float = self.nap.i(args['v'])
         else:
-            i_nap = 0.
+            i_nap: float = 0.
 
         if self.channel_bool['kir']:
-            i_kir = self.kir.i(args['v'])
+            i_kir: float = self.kir.i(args['v'])
         else:
-            i_kir = 0.
+            i_kir: float = 0.
 
         if self.channel_bool['ampar']:
-            i_ampar = self.ampar.i(args['v'], s=args['s_ampar'])
+            i_ampar: float = self.ampar.i(args['v'], s=args['s_ampar'])
         else:
-            i_ampar = 0.
+            i_ampar: float = 0.
 
         if self.channel_bool['nmdar']:
-            i_nmdar = self.nmdar.i(args['v'], s=args['s_nmdar'])
+            i_nmdar: float = self.nmdar.i(args['v'], s=args['s_nmdar'])
         else:
-            i_nmdar = 0.
+            i_nmdar: float = 0.
 
         if self.channel_bool['gabar']:
-            i_gabar = self.gabar.i(args['v'], s=args['s_gabar'])
+            i_gabar: float = self.gabar.i(args['v'], s=args['s_gabar'])
         else:
-            i_gabar = 0.
+            i_gabar: float = 0.
 
         return ((-10.0*self.params.area 
                 * (i_leak
@@ -881,20 +879,20 @@ class Xmodel(ANmodel):
             dCa/dt
         """
         if self.channel_bool['cav']:
-            i_cav = self.cav.i(args['v'])
+            i_cav: float = self.cav.i(args['v'])
         else:
             self.I_cav = 0
 
         if self.channel_bool['nmdar']:
-            i_nmdar = self.nmdar.i(args['v'], s=args['s_nmdar'])
+            i_nmdar: float = self.nmdar.i(args['v'], s=args['s_nmdar'])
         else:
-            i_nmdar = 0
+            i_nmdar: float = 0
 
-        ca = args['ca']
-        a_ca = self.params.a_ca
-        area = self.params.area
-        tau_ca = self.tau_ca
-        dCadt = -a_ca * (10.0*area*i_cav) - a_ca*i_nmdar - ca/tau_ca
+        ca: float = args['ca']
+        a_ca: float = self.params.a_ca
+        area: float = self.params.area
+        tau_ca: float = self.tau_ca
+        dCadt: float = -a_ca * (10.0*area*i_cav) - a_ca*i_nmdar - ca/tau_ca
         return dCadt
 
     def diff_op(self, args: List, time: float) -> List:
@@ -912,40 +910,40 @@ class Xmodel(ANmodel):
         list
             list of variables differentiated by t
         """
-        ode_args = dict(zip(self.ode_list, args))
-        dvdt = self.dvdt(args=ode_args)
-        ode = [dvdt]
+        ode_args: Dict = dict(zip(self.ode_list, args))
+        dvdt: float = self.dvdt(args=ode_args)
+        ode: List[float] = [dvdt]
 
         if self.channel_bool['nav']:
-            dhNadt = self.nav.dhdt(v=ode_args['v'], h=ode_args['h_nav'])
+            dhNadt: float = self.nav.dhdt(v=ode_args['v'], h=ode_args['h_nav'])
             ode.append(dhNadt)        
         if self.channel_bool['kvhh']:
-            dnKdt = self.kvhh.dndt(v=ode_args['v'], n=ode_args['n_kvhh'])
+            dnKdt: float = self.kvhh.dndt(v=ode_args['v'], n=ode_args['n_kvhh'])
             ode.append(dnKdt)
         if self.channel_bool['kva']:
-            dhAdt = self.kva.dhdt(v=ode_args['v'], h=ode_args['h_kva'])
+            dhAdt: float = self.kva.dhdt(v=ode_args['v'], h=ode_args['h_kva'])
             ode.append(dhAdt)
         if self.channel_bool['kvsi']:
-            dmKSdt = self.kvsi.dmdt(v=ode_args['v'], m=ode_args['m_kvsi'])
+            dmKSdt: float = self.kvsi.dmdt(v=ode_args['v'], m=ode_args['m_kvsi'])
             ode.append(dmKSdt)
         if self.channel_bool['ampar']:
-            dsAMPAdt = self.ampar.dsdt(v=ode_args['v'], s=ode_args['s_ampar'])
+            dsAMPAdt: float = self.ampar.dsdt(v=ode_args['v'], s=ode_args['s_ampar'])
             ode.append(dsAMPAdt)
         if self.channel_bool['nmdar']:
-            dxNMDAdt = self.nmdar.dxdt(v=ode_args['v'], x=ode_args['x_nmdar'])
-            dsNMDAdt = self.nmdar.dsdt(v=ode_args['v'], s=ode_args['s_nmdar'], x=ode_args['x_nmdar'])
+            dxNMDAdt: float = self.nmdar.dxdt(v=ode_args['v'], x=ode_args['x_nmdar'])
+            dsNMDAdt: float = self.nmdar.dsdt(v=ode_args['v'], s=ode_args['s_nmdar'], x=ode_args['x_nmdar'])
             ode.append(dxNMDAdt)
             ode.append(dsNMDAdt)
         if self.channel_bool['gabar']:
-            dsGABAdt = self.gabar.dsdt(v=ode_args['v'], s=ode_args['s_gabar'])
+            dsGABAdt: float = self.gabar.dsdt(v=ode_args['v'], s=ode_args['s_gabar'])
             ode.append(dsGABAdt)
         if self.channel_bool['cav'] or self.channel_bool['nmdar'] or self.channel_bool['ca']:
-            ca_args = {
+            ca_args: Dict = {
                 'v' : ode_args.get('v', None),
                 's_nmdar' : ode_args.get('s_nmdar', None),
                 'ca' : ode_args.get('ca', None),
             }
-            dCadt = self.dCadt(ca_args)
+            dCadt: float = self.dCadt(ca_args)
             ode.append(dCadt)
         
         return ode

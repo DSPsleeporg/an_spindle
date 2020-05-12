@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 
+""" 
+This is the analysis module for Averaged Neuron (AN) model. In this module, 
+you can analyze firing patterns from AN model, mainly using frequency and
+spike analysis. 
+"""
+
 __author__ = 'Fumiya Tatsuki, Kensuke Yoshida, Tetsuya Yamada, Shoi Shi, Hiroki R. Ueda'
 __status__ = 'in prep'
 __version__ = '1.0.0'
@@ -18,12 +24,13 @@ os.environ['MKL_NUM_THREADS'] = '1'
 
 from enum import Flag, auto
 import numpy as np
-import pandas as pd
 from scipy.signal import periodogram
 from scipy import signal
 
 
 class WavePattern(Flag):
+    """
+    """
     SWS = 'SWS'
     SWS_FEW_SPIKES = 'SWS_FEW_SPIKES'
     AWAKE = 'AWAKE'
@@ -33,29 +40,60 @@ class WavePattern(Flag):
 
 
 class WaveCheck:
+    """ Check which wave pattern the neuronal firing belong to.
+
+    Parameters
+    ----------
+    samp_freq : int
+        sampling frequency of neuronal recordings (Hz)
+    
+    Attributes
+    ----------
+    wave_patters : WavePattern
+        choices of wave pattern: enumeration objects
+    samp_freq : int
+        sampling frequency of neuronal recordings (Hz)
+    freq_spike : FreqSpike
+        contains helper functions for analyzing firing pattern
+        using those frequency and spikes
+    """
     def __init__(self, samp_freq: int=1000) -> None:
         self.wave_pattern = WavePattern
         self.samp_freq = samp_freq
         self.freq_spike = FreqSpike(samp_freq=samp_freq)
     
     def pattern(self, v: np.ndarray) -> WavePattern:
+        """
+
+        Parameters
+        ----------
+        v : np.ndarray
+            membrane potential over time
+
+        Returns
+        ----------
+        WavePattern
+            which wave pattern `v` belong to 
+        """
         if np.any(np.isinf(v)) or np.any(np.isnan(v)):
             return self.wave_pattern.EXCLUDED
         detv: np.ndarray = signal.detrend(v)
-        max_potential = max(detv)
+        max_potential: float = max(detv)
+        f: np.ndarray  # Array of sample frequencies
+        spw: np.ndarray  # Array of power spectral density or power spectrum
         f, spw = periodogram(detv, fs=self.samp_freq)
-        maxamp = max(spw)
-        nummax = spw.tolist().index(maxamp)
-        maxfre = f[nummax]
-        numfire = self.freq_spike.count_spike(v)
+        maxamp: float = max(spw)
+        nummax: int = spw.tolist().index(maxamp)
+        maxfre: float = f[nummax]
+        numfire: int = self.freq_spike.count_spike(v)
 
         if 200 < max_potential:
             return self.wave_pattern.EXCLUDED
         elif (maxfre < 0.2) or (numfire < 5 * 2):
             return self.wave_pattern.RESTING
-        elif (0.2 < maxfre < 10.2) and (numfire > 5 * 5 * maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire > 5*5*maxfre - 1):
             return self.wave_pattern.SWS
-        elif (0.2 < maxfre < 10.2) and (numfire <= 5 * 5 * maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire <= 5*5*maxfre - 1):
             return self.wave_pattern.SWS_FEW_SPIKES
         elif 10.2 < maxfre:
             return self.wave_pattern.AWAKE
@@ -64,6 +102,18 @@ class WaveCheck:
 
 
 class FreqSpike:
+    """ 
+
+    Parameters
+    ----------
+    samp_freq : int
+        sampling frequency of neuronal recordings (Hz)
+
+    Attributes
+    ----------
+    samp_freq : int
+        sampling frequency of neuronal recordings (Hz)
+    """
     def __init__(self, samp_freq: int) -> None:
         self.samp_freq = samp_freq
 
@@ -84,10 +134,10 @@ class FreqSpike:
         int
             spike count
         """
-        ntraverse = 0
-        ms = int(self.samp_freq / 1000)
+        ntraverse: int = 0
+        ms: int = int(self.samp_freq / 1000)
         for i in range(len(v)-1):
             if (v[i]+20) * (v[i+ms]+20) < 0:
                 ntraverse += 1
-        nspike = int(ntraverse//2)
+        nspike: int = int(ntraverse//2)
         return nspike

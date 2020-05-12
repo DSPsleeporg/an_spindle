@@ -26,16 +26,12 @@ os.environ["OMP_NUM_THREADS"] = "1"  # 2nd likely
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"  # most likely
 
-from collections import Counter
 from datetime import datetime
-from enum import Flag, auto
 from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 from pathlib import Path
 import pickle
-from scipy.signal import periodogram
-from scipy import signal
 from time import time
 from typing import Dict, List, Optional
 import warnings
@@ -107,7 +103,8 @@ class RandomParamSearch():
     """
     def __init__(self, model: str, pattern: str='SWS', ncore: int=1, 
                  hr: int=48, samp_freq: int=1000, samp_len: int=10, 
-                 channel_bool: Optional[List]=None, model_name: Optional[str]=None, 
+                 channel_bool: Optional[List[bool]]=None, 
+                 model_name: Optional[str]=None, 
                  ion: bool=False, concentration: Optional[Dict]=None) -> None:
         self.wave_check = analysis.WaveCheck(samp_freq=samp_freq)
         self.pattern = pattern
@@ -162,8 +159,10 @@ class RandomParamSearch():
 
         while True:
             niter += 1
-            new_params = pd.Series(self.model.set_rand_params())
-            new_params = pd.DataFrame(new_params).T
+            new_params: pd.DataFrame = pd.DataFrame.from_dict(
+                self.model.set_rand_params(), orient='index').T
+            s: np.ndarray
+            info: Dict
             s, info  = self.model.run_odeint()
             
             if info['message'] == 'Excess work done on this call (perhaps wrong Dfun type).':

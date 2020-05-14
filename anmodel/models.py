@@ -46,7 +46,7 @@ import itertools
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional, Union
 
 import channels
 import params
@@ -98,12 +98,13 @@ class ANmodel:
         GABA receptor object
     ion : bool
         whether you make equiribrium potential variable or not
-    concentration : dictionary or str
-        dictionary of ion concentrations
+    concentration : dictionary or str or None
+        dictionary of ion concentrations, default None
     ion_const : object
         contains constants needed when you take ions into consideration
     """
-    def __init__(self, ion: bool=False, concentration: Optional[Dict]=None) -> None:
+    def __init__(self, ion: bool=False, 
+                 concentration: Optional[Union[Dict, str]]=None) -> None:
         self.params = params.Constants()
         self.ini = self.params.an_ini
         self.leak = channels.Leak()
@@ -220,6 +221,17 @@ class ANmodel:
         ex_ca: float = self.concentration['ex_na']
         vCa: float = r * t / (f * 2) * np.log(ex_ca / in_ca) * 1000
         self.cav.set_e(new_e=vCa)
+
+    def get_e(self) -> Dict:
+        e_dict: Dict = {}
+        e_dict['vL'] = self.leak.get_e()
+        e_dict['vNa'] = self.nav.get_e()
+        e_dict['vK'] = self.kvhh.get_e()
+        e_dict['vCa'] = self.cav.get_e()
+        e_dict['vAMPAR'] = self.ampar.get_e()
+        e_dict['vNMDAR'] = self.nmdar.get_e()
+        e_dict['vGABAR'] = self.gabar.get_e()
+        return e_dict
 
     def gen_params(self) -> Dict:
         """ generate parameters randomly for AN model.
@@ -794,7 +806,7 @@ class Xmodel(ANmodel):
         for channel in list(self.channel.keys()):
             if self.channel_bool[channel]:
                 params[channel] = self.channel[channel].get_g()
-        if self.tau != float('inf'):
+        if self.tau_ca != float('inf'):
             params['t_ca'] = self.tau_ca
         return params
         

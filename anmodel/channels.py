@@ -80,6 +80,15 @@ class Base:
         """
         self.e = new_e
 
+    def get_e(self) -> float:
+        ''' Get current equilibrium potential.
+
+        Returns:
+        ----------
+        float
+            current equilibrium potential.
+        '''
+        return self.e
 
 class Leak(Base):
     """ Leak channel (sodium / potassium).

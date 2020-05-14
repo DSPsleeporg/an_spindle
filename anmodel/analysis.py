@@ -31,12 +31,12 @@ from scipy import signal
 class WavePattern(Flag):
     """ Enumeration class that distinguish different wave pattern.
     """
-    SWS = 'SWS'
-    SWS_FEW_SPIKES = 'SWS_FEW_SPIKES'
-    AWAKE = 'AWAKE'
-    RESTING = 'RESTING'
-    EXCLUDED = 'EXCLUDED'
-    ERROR = 'ERROR'
+    SWS = auto()
+    SWS_FEW_SPIKES = auto()
+    AWAKE = auto()
+    RESTING w= auto()
+    EXCLUDED = auto()
+    ERROR = auto()
 
 
 class WaveCheck:
@@ -95,7 +95,7 @@ class WaveCheck:
             return self.wave_pattern.SWS
         elif (0.2 < maxfre < 10.2) and (numfire <= 5*5*maxfre - 1):
             return self.wave_pattern.SWS_FEW_SPIKES
-        elif 10.2 < maxfre:
+        elif maxfre > 10.2:
             return self.wave_pattern.AWAKE
         else:
             return self.wave_pattern.EXCLUDED

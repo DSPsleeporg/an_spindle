@@ -6,10 +6,11 @@ you can analyze firing patterns from AN model, mainly using frequency and
 spike analysis. 
 """
 
-__author__ = 'Fumiya Tatsuki, Kensuke Yoshida, Tetsuya Yamada, Shoi Shi, Hiroki R. Ueda'
-__status__ = 'in prep'
+__author__ = 'Fumiya Tatsuki, Kensuke Yoshida, Tetsuya Yamada, \
+              Takahiro Katsumata, Shoi Shi, Hiroki R. Ueda'
+__status__ = 'Published'
 __version__ = '1.0.0'
-__date__ = '11 May 2020'
+__date__ = '15 May 2020'
 
 
 import os
@@ -34,7 +35,7 @@ class WavePattern(Flag):
     SWS = auto()
     SWS_FEW_SPIKES = auto()
     AWAKE = auto()
-    RESTING w= auto()
+    RESTING = auto()
     EXCLUDED = auto()
     ERROR = auto()
 
@@ -91,9 +92,9 @@ class WaveCheck:
             return self.wave_pattern.EXCLUDED
         elif (maxfre < 0.2) or (numfire < 5 * 2):
             return self.wave_pattern.RESTING
-        elif (0.2 < maxfre < 10.2) and (numfire > 5*5*maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire > 5*maxfre - 1):
             return self.wave_pattern.SWS
-        elif (0.2 < maxfre < 10.2) and (numfire <= 5*5*maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire <= 5*maxfre - 1):
             return self.wave_pattern.SWS_FEW_SPIKES
         elif maxfre > 10.2:
             return self.wave_pattern.AWAKE

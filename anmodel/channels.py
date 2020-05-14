@@ -4,10 +4,11 @@
 This is the channel module for Averaged Neuron (AN) model. 
 """
 
-__author__ = 'Fumiya Tatsuki, Kensuke Yoshida, Tetsuya Yamada, Shoi Shi, Hiroki R. Ueda'
-__status__ = 'in prep'
+__author__ = 'Fumiya Tatsuki, Kensuke Yoshida, Tetsuya Yamada, \
+              Takahiro Katsumata, Shoi Shi, Hiroki R. Ueda'
+__status__ = 'Published'
 __version__ = '1.0.0'
-__date__ = '11 May 2020'
+__date__ = '15 May 2020'
 
 
 import os
@@ -221,7 +222,7 @@ class NavHH(Base):
 
     Note
     ----------
-    This formulation is from Compte et al., 2006
+    This formulation is from Compute et al., 2003
 
     Parameters
     ----------
@@ -409,7 +410,7 @@ class KvHH(Base):
 
     Note
     ----------
-    This formulation is from Compte et al., 2006
+    This formulation is from Compute et al., 2003
 
     Parameters
     ----------
@@ -542,7 +543,7 @@ class KvA(Base):
 
     Note
     ----------
-    This formulation is from Compte et al., 2006
+    This formulation is from Compute et al., 2003
 
     Parameters
     ----------
@@ -658,7 +659,7 @@ class KvSI(Base):
 
     Note
     ----------
-    This formulation is from Compte et al., 2006
+    This formulation is from Compute et al., 2003
 
     Parameters
     ----------
@@ -816,7 +817,7 @@ class NaP(Base):
 
     Note
     ----------
-    This formulation is from Compte et al., 2006
+    This formulation is from Compute et al., 2003
 
     Parameters
     ----------
@@ -946,7 +947,7 @@ class KIR(Base):
 
     Note
     ----------
-    This formulation is from Compte et al., 2006
+    This formulation is from Compute et al., 2003
 
     Parameters
     ----------
@@ -1009,7 +1010,7 @@ class AMPAR(Base):
 
     Note
     ----------
-    This formulation is from Compte et al., 2006
+    This formulation is from Compute et al., 2003
 
     Parameters
     ----------
@@ -1105,7 +1106,7 @@ class NMDAR(Base):
 
     Note
     ----------
-    This formulation is from Compte et al., 2006 and Wang, 1999
+    This formulation is from Compute et al., 2003 and Wang, 1999
 
     Parameters
     ----------
@@ -1234,7 +1235,7 @@ class GABAR(Base):
 
     Note
     ----------
-    This formulation is from Compte et al., 2006
+    This formulation is from Compute et al., 2003
 
     Parameters
     ----------

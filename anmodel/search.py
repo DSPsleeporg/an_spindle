@@ -10,10 +10,11 @@ pattern can be searched with algorithms as described in Tatsuki et al., 2016
 and Yoshida et al., 2018.
 """
 
-__author__ = 'Fumiya Tatsuki, Kensuke Yoshida, Tetsuya Yamada, Shoi Shi, Hiroki R. Ueda'
-__status__ = 'in prep'
+__author__ = 'Fumiya Tatsuki, Kensuke Yoshida, Tetsuya Yamada, \
+              Takahiro Katsumata, Shoi Shi, Hiroki R. Ueda'
+__status__ = 'Published'
 __version__ = '1.0.0'
-__date__ = '11 May 2020'
+__date__ = '15 May 2020'
 
 
 import os
@@ -168,7 +169,7 @@ class RandomParamSearch():
             if info['message'] == 'Excess work done on this call (perhaps wrong Dfun type).':
                 pass
             
-            v: np.ndarray = s[self.samp_freq*self.samp_len//2-1:, 0]
+            v: np.ndarray = s[self.samp_freq*self.samp_len//2:, 0]
             pattern: analysis.WavePattern = self.wave_check.pattern(v=v)
             if pattern.name == self.pattern:
                 print('Hit!')

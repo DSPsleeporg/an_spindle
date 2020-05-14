@@ -6,17 +6,18 @@ These parameters are identical to those in Tatsuki et al., 2016
 and Yoshida et al., 2018.
 """
 
-__author__ = 'Fumiya Tatsuki, Kensuke Yoshida, Tetsuya Yamada, Shoi Shi, Hiroki R. Ueda'
-__status__ = 'in prep'
+__author__ = 'Fumiya Tatsuki, Kensuke Yoshida, Tetsuya Yamada, \
+              Takahiro Katsumata, Shoi Shi, Hiroki R. Ueda'
+__status__ = 'Published'
 __version__ = '1.0.0'
-__date__ = '11 May 2020'
+__date__ = '15 May 2020'
 
 
 class Constants:
     """ Constant values needed for AN model.
 
     These constant values are based on previous researches.  See Tatsuki et al., 2016, 
-    Yoshida et al., 2018 and Compte et al., 2006.
+    Yoshida et al., 2018 and Compte et al., 2003.
 
     Attributes
     ----------

@@ -988,7 +988,7 @@ class Xmodel(ANmodel):
         if self.channel_bool['cav'] or self.channel_bool['nmdar'] or self.channel_bool['ca']:
             ca_args: Dict = {
                 'v' : ode_args.get('v', None),
-                's_nmdar' : ode_args.get('s_nmdar', None),
+                'g_nmdar' : ode_args.get('g_nmdar', None),
                 'ca' : ode_args.get('ca', None),
             }
             dCadt: float = self.dCadt(ca_args)

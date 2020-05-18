@@ -206,5 +206,6 @@ class RandomParamSearch():
 
 
 if __name__ == '__main__':
-    rps = RandomParamSearch('AN')
+    channel_bool = [1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1]
+    rps = RandomParamSearch('X', ncore=1, channel_bool=channel_bool)
     rps.multi_singleprocess()

@@ -257,12 +257,12 @@ class ANmodel:
         gX_name: List[str] = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
                          'g_cav', 'g_kca', 'g_nap', 'g_kir']
         gX_log: np.ndarray = 4 * np.random.rand(9) - 2  # from -2 to 2
-        gX: np.ndarray = 10 * np.ones(9) ** gX_log  # 0.01 ~ 100
+        gX: np.ndarray = (10 * np.ones(9)) ** gX_log  # 0.01 ~ 100
         gX_itr: Iterator = zip(gX_name, gX)
 
         gR_name: List[str] = ['g_ampar', 'g_nmdar', 'g_gabar']
         gR_log: np.ndarray = 4 * np.random.rand(3) - 3  # from -3 to 1
-        gR: np.ndarray = 10 * np.ones(3) ** gR_log  # 0.001 ~ 10
+        gR: np.ndarray = (10 * np.ones(3)) ** gR_log  # 0.001 ~ 10
         gR_itr: Iterator = zip(gR_name, gR)
 
         tCa_log: float = 2 * np.random.rand(1) + 1  # from 1 to 3
@@ -522,7 +522,7 @@ class SANmodel(ANmodel):
 
         gX_name: List[str] = ['g_leak', 'g_kvhh', 'g_cav', 'g_kca', 'g_nap']
         gX_log: np.ndarray = 4 * np.random.rand(5) - 2  # from -2 to 2
-        gX: np.ndarray = 10 * np.ones(5) ** gX_log  # 0.01 ~ 100
+        gX: np.ndarray = (10 * np.ones(5)) ** gX_log  # 0.01 ~ 100
         gX_itr: Iterator = zip(gX_name, gX)
 
         tCa_log: float = 2 * np.random.rand(1) + 1  # from 1 to 3
@@ -743,15 +743,15 @@ class Xmodel(ANmodel):
 
         gX_name: List[str] = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
                               'g_cav', 'g_kca', 'g_nap', 'g_kir']
-        gX_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values())[:10]))
+        gX_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values())[:9]))
         gX_log: np.ndarray = 4 * np.random.rand(len(gX_name)) - 2  # from -2 to 2
-        gX: np.ndarray = 10 * np.ones(len(gX_name)) ** gX_log  # 0.01 ~ 100
+        gX: np.ndarray = (10 * np.ones(len(gX_name))) ** gX_log  # 0.01 ~ 100
         gX_itr: Iterator = zip(gX_name, gX)
 
         gR_name: List[str] = ['g_ampar', 'g_nmdar', 'g_gabar']
-        gR_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values())[10:13]))
+        gR_name: List[str] = list(itertools.compress(gR_name, list(self.channel_bool.values())[9:12]))
         gR_log: np.ndarray = 4 * np.random.rand(len(gR_name)) - 3  # from -3 to 1
-        gR: np.ndarray = 10 * np.ones(len(gR_name)) ** gR_log  # 0.001 ~ 10
+        gR: np.ndarray = (10 * np.ones(len(gR_name))) ** gR_log  # 0.001 ~ 10
         gR_itr: Iterator = zip(gR_name, gR)
 
         param_dict.update(gX_itr)
@@ -821,10 +821,10 @@ class Xmodel(ANmodel):
         Parameters
         ----------
         args : dictionary
-            keys : str\
-                names of variables for the differential equations\
-            values : float\
-                values of variables for the differential equations\
+            keys : str\\
+                names of variables for the differential equations\\
+            values : float\\
+                values of variables for the differential equations\\
 
         Results
         ----------
@@ -988,7 +988,7 @@ class Xmodel(ANmodel):
         if self.channel_bool['cav'] or self.channel_bool['nmdar'] or self.channel_bool['ca']:
             ca_args: Dict = {
                 'v' : ode_args.get('v', None),
-                'g_nmdar' : ode_args.get('g_nmdar', None),
+                's_nmdar' : ode_args.get('s_nmdar', None),
                 'ca' : ode_args.get('ca', None),
             }
             dCadt: float = self.dCadt(ca_args)

@@ -29,6 +29,7 @@ plt.plot(s[4999:, 0])
 - Fumiya Tatsuki
 - Kensuke Yoshida
 - Tetsuya Yamada
+- Takahiro Katsumata
 - Shoi Shi
 - Hiroki R. Ueda
 

@@ -25,10 +25,11 @@ ENJOY YOUR SIMULATION WITH AVERAGED NEURON MODEL!!!!
 """
 
 
-__author__ = 'Fumiya Tatsuki, Kensuke Yoshida, Tetsuya Yamada, Shoi Shi, Hiroki R. Ueda'
-__status__ = 'in prep'
+__author__ = 'Fumiya Tatsuki, Kensuke Yoshida, Tetsuya Yamada, \
+              Takahiro Katsumata, Shoi Shi, Hiroki R. Ueda'
+__status__ = 'Published'
 __version__ = '1.0.0'
-__date__ = '11 May 2020'
+__date__ = '15 May 2020'
 
 
 import os
@@ -46,7 +47,7 @@ import itertools
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional, Union
 
 import channels
 import params
@@ -98,12 +99,13 @@ class ANmodel:
         GABA receptor object
     ion : bool
         whether you make equiribrium potential variable or not
-    concentration : dictionary or str
-        dictionary of ion concentrations
+    concentration : dictionary or str or None
+        dictionary of ion concentrations, default None
     ion_const : object
         contains constants needed when you take ions into consideration
     """
-    def __init__(self, ion: bool=False, concentration: Optional[Dict]=None) -> None:
+    def __init__(self, ion: bool=False, 
+                 concentration: Optional[Union[Dict, str]]=None) -> None:
         self.params = params.Constants()
         self.ini = self.params.an_ini
         self.leak = channels.Leak()
@@ -220,6 +222,17 @@ class ANmodel:
         ex_ca: float = self.concentration['ex_na']
         vCa: float = r * t / (f * 2) * np.log(ex_ca / in_ca) * 1000
         self.cav.set_e(new_e=vCa)
+
+    def get_e(self) -> Dict:
+        e_dict: Dict = {}
+        e_dict['vL'] = self.leak.get_e()
+        e_dict['vNa'] = self.nav.get_e()
+        e_dict['vK'] = self.kvhh.get_e()
+        e_dict['vCa'] = self.cav.get_e()
+        e_dict['vAMPAR'] = self.ampar.get_e()
+        e_dict['vNMDAR'] = self.nmdar.get_e()
+        e_dict['vGABAR'] = self.gabar.get_e()
+        return e_dict
 
     def gen_params(self) -> Dict:
         """ generate parameters randomly for AN model.
@@ -730,13 +743,13 @@ class Xmodel(ANmodel):
 
         gX_name: List[str] = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
                               'g_cav', 'g_kca', 'g_nap', 'g_kir']
-        gX_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values()[:10])))
+        gX_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values())[:10]))
         gX_log: np.ndarray = 4 * np.random.rand(len(gX_name)) - 2  # from -2 to 2
         gX: np.ndarray = 10 * np.ones(len(gX_name)) ** gX_log  # 0.01 ~ 100
         gX_itr: Iterator = zip(gX_name, gX)
 
         gR_name: List[str] = ['g_ampar', 'g_nmdar', 'g_gabar']
-        gR_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values()[10:13])))
+        gR_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values())[10:13]))
         gR_log: np.ndarray = 4 * np.random.rand(len(gR_name)) - 3  # from -3 to 1
         gR: np.ndarray = 10 * np.ones(len(gR_name)) ** gR_log  # 0.001 ~ 10
         gR_itr: Iterator = zip(gR_name, gR)
@@ -794,7 +807,7 @@ class Xmodel(ANmodel):
         for channel in list(self.channel.keys()):
             if self.channel_bool[channel]:
                 params[channel] = self.channel[channel].get_g()
-        if self.tau != float('inf'):
+        if self.tau_ca != float('inf'):
             params['t_ca'] = self.tau_ca
         return params
         

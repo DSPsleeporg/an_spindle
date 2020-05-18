@@ -743,13 +743,13 @@ class Xmodel(ANmodel):
 
         gX_name: List[str] = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
                               'g_cav', 'g_kca', 'g_nap', 'g_kir']
-        gX_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values()[:10])))
+        gX_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values())[:10]))
         gX_log: np.ndarray = 4 * np.random.rand(len(gX_name)) - 2  # from -2 to 2
         gX: np.ndarray = 10 * np.ones(len(gX_name)) ** gX_log  # 0.01 ~ 100
         gX_itr: Iterator = zip(gX_name, gX)
 
         gR_name: List[str] = ['g_ampar', 'g_nmdar', 'g_gabar']
-        gR_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values()[10:13])))
+        gR_name: List[str] = list(itertools.compress(gX_name, list(self.channel_bool.values())[10:13]))
         gR_log: np.ndarray = 4 * np.random.rand(len(gR_name)) - 3  # from -3 to 1
         gR: np.ndarray = 10 * np.ones(len(gR_name)) ** gR_log  # 0.001 ~ 10
         gR_itr: Iterator = zip(gR_name, gR)

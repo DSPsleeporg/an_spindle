@@ -90,11 +90,11 @@ class WaveCheck:
 
         if 200 < max_potential:
             return self.wave_pattern.EXCLUDED
-        elif (maxfre < 0.2) or (numfire < 5 * 2):
+        elif (maxfre < 0.2) or (numfire < 5*2):
             return self.wave_pattern.RESTING
-        elif (0.2 < maxfre < 10.2) and (numfire > 5*maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire > 5*5*maxfre - 1):
             return self.wave_pattern.SWS
-        elif (0.2 < maxfre < 10.2) and (numfire <= 5*maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire <= 5*5*maxfre - 1):
             return self.wave_pattern.SWS_FEW_SPIKES
         elif maxfre > 10.2:
             return self.wave_pattern.AWAKE

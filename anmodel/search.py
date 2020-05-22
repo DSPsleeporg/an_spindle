@@ -38,8 +38,9 @@ from typing import Dict, List, Optional
 import warnings
 warnings.filterwarnings('ignore')
 
-import models
 import analysis
+import models
+import readinfo
 
 
 class RandomParamSearch():
@@ -56,7 +57,7 @@ class RandomParamSearch():
         searched firing pattern
     ncore : int
         number of cores you are going to use
-    time : int or str
+    hr : int or str
         how long to run parameter search (hour), default 48 (2 days)
     channel_bool : list (bool) or None
         WHEN YOU USE X MODEL, YOU MUST DESIGNATE THIS LIST.\
@@ -146,7 +147,7 @@ class RandomParamSearch():
         """
         core, now, time_start, rand_seed = args
         date: str = f'{now.year}_{now.month}_{now.day}'
-        p: Path = Path.cwd()
+        p: Path = Path.cwd().parents[0]
         res_p: Path = p / 'results' / f'{self.pattern}_params' / f'{date}_{self.model_name}'
         res_p.mkdir(parents=True, exist_ok=True)
         save_p: Path = res_p / f'{self.pattern}_{date}_{core}.pickle'
@@ -206,6 +207,32 @@ class RandomParamSearch():
 
 
 if __name__ == '__main__':
-    channel_bool = [1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1]
-    rps = RandomParamSearch('X', ncore=1, channel_bool=channel_bool)
+    arg: List = sys.argv
+    date: str = arg[1]
+    read: readinfo.Read = readinfo.Read(date=date)
+    idf: pd.DataFrame = read.get_info()
+
+    if not pd.isnull(idf.loc['channel_bool'][1]):
+        channel_bool: Dict = read.channel_bool()
+    else:
+        channel_bool = None
+    if not pd.isnull(idf.loc['ion'][1]):
+        ion: bool = True
+        concentration: Dict = read.concentration()
+    else:
+        ion: bool = False
+        concentration = None
+
+    rps = RandomParamSearch(
+        model=idf.loc['model'][1], 
+        pattern=idf.loc['pattern'][1], 
+        ncore=int(idf.loc['ncore'][1]), 
+        hr=int(idf.loc['hr'][1]), 
+        samp_freq=int(idf.loc['samp_freq'][1]), 
+        samp_len=int(idf.loc['samp_len'][1]), 
+        channel_bool=channel_bool, 
+        model_name=idf.loc['model_name'][1], 
+        ion=ion, 
+        concentration=concentration, 
+    )
     rps.multi_singleprocess()

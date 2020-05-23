@@ -1,9 +1,22 @@
+# -*- coding: utf-8 -*-
+
+"""
+This is a module for reading information csv file. Each method returns 
+dataframe containing necessary information for each analysis or simulation.
+"""
+
+__author__ = 'Tetsuya Yamada'
+__status__ = 'Editing'
+__version__ = '1.0.0'
+__date__ = '22 May 2020'
+
+
 import pandas as pd
 from pathlib import Path
 from typing import Dict
 
 class Read:
-    ''' Read information files.
+    """ Read information files.
 
     Parameters
     ----------
@@ -18,7 +31,7 @@ class Read:
         date when simulation was ran
     info_df : pd.DataFrame
         information dataframe about the simulation
-    '''
+    """
     def __init__(self, date: str) -> None:
         self.p: Path = Path.cwd().parents[0]
         info_p: Path = self.p / 'info' / f'{date}.csv'

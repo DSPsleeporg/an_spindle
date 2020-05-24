@@ -171,7 +171,11 @@ class RandomParamSearch():
                 pass
             
             v: np.ndarray = s[self.samp_freq*self.samp_len//2:, 0]
-            pattern: analysis.WavePattern = self.wave_check.pattern(v=v)
+            if self.pattern == 'SPN':
+                pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v)
+            else:
+                pattern: analysis.WavePattern = self.wave_check.pattern(v=v)
+            
             if pattern.name == self.pattern:
                 print('Hit!')
                 nhit += 1

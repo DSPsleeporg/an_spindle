@@ -195,6 +195,8 @@ class RandomParamSearch():
                 break
 
     def multi_singleprocess(self) -> None:
+        """ Random parameter search using multi cores.
+        """
         args: List = []
         now: datetime = datetime.now()
         time_start: float = time()
@@ -224,14 +226,14 @@ if __name__ == '__main__':
         concentration = None
 
     rps = RandomParamSearch(
-        model=idf.loc['model'][1], 
-        pattern=idf.loc['pattern'][1], 
+        model=str(idf.loc['model'][1]), 
+        pattern=str(idf.loc['pattern'][1]), 
         ncore=int(idf.loc['ncore'][1]), 
         hr=int(idf.loc['hr'][1]), 
         samp_freq=int(idf.loc['samp_freq'][1]), 
         samp_len=int(idf.loc['samp_len'][1]), 
         channel_bool=channel_bool, 
-        model_name=idf.loc['model_name'][1], 
+        model_name=str(idf.loc['model_name'][1]), 
         ion=ion, 
         concentration=concentration, 
     )

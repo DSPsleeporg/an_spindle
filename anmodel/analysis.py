@@ -25,8 +25,10 @@ os.environ['MKL_NUM_THREADS'] = '1'
 
 from enum import Flag, auto
 import numpy as np
+import pandas as pd
 from scipy.signal import periodogram
 from scipy import signal
+from typing import List
 
 
 class WavePattern(Flag):
@@ -38,6 +40,7 @@ class WavePattern(Flag):
     RESTING = auto()
     EXCLUDED = auto()
     ERROR = auto()
+    SPN = auto()
 
 
 class WaveCheck:
@@ -64,7 +67,7 @@ class WaveCheck:
         self.freq_spike = FreqSpike(samp_freq=samp_freq)
     
     def pattern(self, v: np.ndarray) -> WavePattern:
-        """
+        """ analyse the firing pattern of the result of the simulation.
 
         Parameters
         ----------
@@ -101,6 +104,52 @@ class WaveCheck:
         else:
             return self.wave_pattern.EXCLUDED
 
+    def pattern_spn(self, v: np.ndarray) -> WavePattern:
+        """ analyse the firing pattern of the result of the simulation (spindle ver.).
+
+        Parameters
+        ----------
+        v : np.ndarray
+            membrane potential over time
+
+        Returns
+        ----------
+        WavePattern
+            which wave pattern `v` belong to 
+        """
+        if np.any(np.isinf(v)) or np.any(np.isnan(v)):
+            return self.wave_pattern.EXCLUDED
+        detv: np.ndarray = signal.detrend(v)
+        max_potential: float = max(detv)
+        f: np.ndarray  # Array of sample frequencies
+        spw: np.ndarray  # Array of power spectral density or power spectrum
+        f, spw = periodogram(detv, fs=self.samp_freq)
+        maxamp: float = max(spw)
+        nummax: int = spw.tolist().index(maxamp)
+        maxfre: float = f[nummax]
+        numfire: int = self.freq_spike.count_spike(v)
+        v_sq: np.ndarray = self.freq_spike.square_wave(v)
+        v_group: pd.DataFrame = pd.DataFrame([v, v_sq]).T.groupby(1)
+        if np.any(v_sq==0) and np.any(v_sq==1):
+            vmin_silent: float = v_group.min().iloc[0]
+            vmin_burst: float = v_group.min().iloc[1]
+        else:
+            vmin_silent = vmin_burst = v_group.min().iloc[0]
+
+        if 200 < max_potential:
+            return self.wave_pattern.EXCLUDED
+        elif (maxfre < 0.2) or (numfire < 5*2):
+            return self.wave_pattern.RESTING
+        elif (0.2 < maxfre < 10.2) and (numfire > 5*5*maxfre - 1):
+            if vmin_silent > vmin_burst: # doesn't need .iloc[0]?
+                return self.wave_pattern.SPN
+            return self.wave_pattern.SWS
+        elif (0.2 < maxfre < 10.2) and (numfire <= 5*5*maxfre - 1):
+            return self.wave_pattern.SWS_FEW_SPIKES
+        elif maxfre > 10.2:
+            return self.wave_pattern.AWAKE
+        else:
+            return self.wave_pattern.EXCLUDED
 
 class FreqSpike:
     """ 
@@ -130,7 +179,7 @@ class FreqSpike:
         v : np.ndarray
             membrane potential of a neuron
         
-        Return
+        Returns
         ---------
         int
             spike count
@@ -142,3 +191,82 @@ class FreqSpike:
                 ntraverse += 1
         nspike: int = int(ntraverse//2)
         return nspike
+
+    def get_spiketime(self, v: np.ndarray) -> np.ndarray:
+        """ Get time index when spike occurs from the result of the simulation.
+
+        Parameters
+        ----------
+        v : np.ndarray
+            membrane potential of a neuron
+
+        Returns
+        ----------
+        np.ndarray
+            spike time index
+        """
+        peaktime: np.ndarray = signal.argrelmax(v, order=1)[0]
+        spikeidx: np.ndarray = np.where(v[peaktime]>-20)[0]
+        spiketime: np.ndarray = peaktime[spikeidx]
+        return spiketime
+
+    def get_burstinfo(self, v: np.ndarray, 
+                      isi_thres: int=50, 
+                      spike_thres:int =5
+        ) -> (List, float, int):
+        """ Get information around burst firing from the result of the simulation.
+
+        Parameters
+        ----------
+        v : np.ndarray
+            membrane potential of a neuron
+        isi_thres : int
+            interspike interval threshold. over this threshold, spikes are 
+            regarded as being in the separated event.
+        spike_thres : int
+            spike threshold. under this threshold, each event doesn't 
+            regarded as a "burst" event.
+
+        Returns
+        ----------
+        burstidx : List
+            list of time index in which burst firing occurs.
+        ave_spike_per_burst : float
+            average number of spike during single burst event.
+        num_burst : int
+            number of burst event in the given simulation result.
+        """
+        spiketime: np.ndarray = self.get_spiketime(v)
+        isi: np.ndarray = np.diff(spiketime)
+        grouped_events: np.ndarray = np.split(spiketime, np.where(isi>isi_thres)[0]+1)
+        burst_events: np.ndarray = [x for x in grouped_events if len(x)>=spike_thres]
+        num_burst: int = len(burst_events)
+        if num_burst == 0:  # no burst events
+            ave_spike_per_burst: float = 0.
+            burstidx: List = []
+            return burstidx, ave_spike_per_burst, num_burst
+        else:
+            ave_spike_per_burst: float = len(np.concatenate(burst_events)) / num_burst
+            padding: List = [np.diff(x).mean() for x in burst_events]
+            burstidx: List = []
+            for i in range(len(burst_events)):
+                idx: List = [j for j in range(len(v)) if burst_events[i][0]-padding[i]<j<burst_events[i][-1]+padding[i]]
+                burstidx.append(idx)
+            return burstidx, ave_spike_per_burst, num_burst
+        
+    def square_wave(self, v: np.ndarray) -> np.ndarray:
+        """ approximate firing pattern of the given parameter set into square wave.
+
+        Parameters
+        ----------
+        v : np.ndarray
+            membrane potential of a neuron
+        
+        Returns
+        ---------
+        v_sq : np.ndarray
+            array contains 0 or 1, 0 during silent phase and 1 during burst phase.
+        """
+        burstidx: List = self.get_burstinfo(v)[0]
+        v_sq: np.ndarray = np.array([1 if i in burstidx else 0 for i in range(len(v))])
+        return v_sq

@@ -15,6 +15,7 @@ __version__ = '1.0.0'
 __date__ = '23 May 2020'
 
 
+import sys
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 import pandas as pd
@@ -23,6 +24,7 @@ import pickle
 from typing import List, Dict, Optional
 
 import models
+import readinfo
 
 class Plot:
     """ Plot parameter sets collected in RPS.
@@ -85,13 +87,12 @@ class Plot:
         Simulation model object. See anmodel.models.py
     """
     def __init__(self, model: str, pattern: str='SWS', ncore: int=1, 
-                 hr: int=48, samp_freq: int=1000, samp_len: int=10, 
+                 samp_freq: int=1000, samp_len: int=10, 
                  channel_bool: Optional[List[bool]]=None, 
                  model_name: Optional[str]=None, 
                  ion: bool=False, concentration: Optional[Dict]=None) -> None:
         self.pattern = pattern
         self.ncore = ncore
-        self.hr = int(hr)
         self.samp_freq = samp_freq
         self.samp_len = samp_len
 
@@ -108,7 +109,7 @@ class Plot:
             self.model = models.Xmodel(channel_bool, ion, concentration)
 
     def singleprocess(self, param_df: pd.DataFrame, sdir_p: Path) -> None:
-        ''' Plot parameter sets in a single parameter dataframe.
+        """ Plot parameter sets in a single parameter dataframe.
 
         Parameters
         ----------
@@ -116,7 +117,7 @@ class Plot:
             dataframe containing parameter sets to be plotted
         sdir_p : Path
             path for save directory
-        '''
+        """
         for i in range(len(param_df)):
             file_name: str = f'index_{i}.png'
             save_p: Path = sdir_p / file_name
@@ -130,6 +131,8 @@ class Plot:
             plt.close()
     
     def multi_singleprocess(self, date: int) -> None:
+        """ Plot parameter sets in multi parameter dataframe (using multi core).
+        """
         p: Path = Path.cwd().parents[0]
         res_p = p / 'results' / f'{self.pattern}_params' / f'{date}_{self.model_name}'
         args: List = []
@@ -144,3 +147,34 @@ class Plot:
         print(f'Simulation was conducted {tot_trial_num} times in total.')
         with Pool(processes=self.ncore) as pool:
             pool.map(self.singleprocess, args)
+
+
+if __name__ == '__main__':
+    arg: List = sys.argv
+    date: str = arg[1]
+    read: readinfo.Read = readinfo.Read(date=date)
+    idf: pd.DataFrame = read.get_info()
+
+    if not pd.isnull(idf.loc['channel_bool'][1]):
+        channel_bool: Dict = read.channel_bool()
+    else:
+        channel_bool = None
+    if not pd.isnull(idf.loc['ion'][1]):
+        ion: bool = True
+        concentration: Dict = read.concentration()
+    else:
+        ion: bool = False
+        concentration = None
+
+    plot = Plot(
+        model=str(idf.loc['model'][1]), 
+        pattern=str(idf.loc['pattern'][1]), 
+        ncore=int(idf.loc['ncore'][1]), 
+        samp_freq =int(idf(idf.loc['samp_freq'][1])), 
+        samp_len=int(idf.loc['samp_len'][1]), 
+        channel_bool=channel_bool, 
+        model_name=str(idf.loc['model_name'][1]), 
+        ion=ion, 
+        concentration=concentration
+    )
+    plot.multi_singleprocess(date)

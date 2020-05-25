@@ -43,7 +43,138 @@ import models
 import readinfo
 
 
-class RandomParamSearch():
+class NormalSearch:
+    """ Normal Parameter Search (Parameter search from given parameter sets)
+
+    Parameters
+    ----------
+        model : str
+        model in which parameter search is conducted
+    pattern : str
+        searched firing pattern
+    channel_bool : list (bool) or None
+        WHEN YOU USE X MODEL, YOU MUST DESIGNATE THIS LIST.\
+        Channel lists that X model contains. True means channels incorporated 
+        in the model and False means not. The order of the list is the same 
+        as other lists or dictionaries that contain channel information in 
+        AN model. Example: \
+        channel_bool = [
+            1,  # leak channel
+            0,  # voltage-gated sodium channel
+            1,  # HH-type delayed rectifier potassium channel
+            0,  # fast A-type potassium channel
+            0,  # slowly inactivating potassium channel
+            1,  # voltage-gated calcium channel
+            1,  # calcium-dependent potassium channel
+            1,  # persistent sodium channel
+            0,  # inwardly rectifier potassium channel
+            0,  # AMPA receptor
+            0,  # NMDA receptor
+            0,  # GABA receptor
+            1,  # calcium pump
+        ]\
+        This is SAN model, default None
+    model_name : str or None
+        name of the X model, default None
+    ion : bool
+        whether you make equiribrium potential variable or not, 
+        default False
+    concentration : dictionary or str or None
+        dictionary of ion concentration, or 'sleep'/'awake' that
+        designate typical ion concentrations, default None
+    """
+    def __init__(self, model: str, pattern: str='SWS',
+                 samp_freq: int=1000, samp_len: int=10, 
+                 channel_bool: Optional[List[bool]]=None, 
+                 model_name: Optional[str]=None, 
+                 ion: bool=False, concentration: Optional[Dict]=None) -> None:
+        self.wave_check = analysis.WaveCheck(samp_freq=samp_freq)
+        self.pattern = pattern
+        self.samp_freq = samp_freq
+        self.samp_len = samp_len
+
+        if model == 'AN':
+            self.model_name = 'AN'
+            self.model = models.ANmodel(ion, concentration)
+        if model == 'SAN':
+            self.model_name = 'SAN'
+            self.model = models.SANmodel(ion, concentration)
+        if model == "X":
+            if channel_bool is None:
+                raise TypeError('Designate channel in argument of X model.')
+            self.model_name = model_name
+            self.model = models.Xmodel(channel_bool, ion, concentration)
+
+    def read_df(self, filename: str) -> pd.DataFrame:
+        """ Read dataframe that contains parameter sets.
+
+        Parameters
+        ----------
+        filename : str
+            name of the pickle file that contains parameter sets
+
+        Returns
+        ----------
+        pd.DataFrame
+            parameter sets in the form of pandas.DataFrame
+        """
+        p: Path = Path.cwd().parents[0]
+        df_p: Path = p / 'info' / 'search_df' / f'{filename}.pickle'
+        with open(df_p, mode='rb') as f:
+            df: pd.DataFrame = pickle.load(f)
+        return df
+    
+    def singleprocess(self, df: pd.DataFrame, filename: str) -> None:
+        """ Normal parameter search using single core.
+
+        In normal parameter search (parameter search for a given parameter sets), 
+        we don't run so many simulations. So single core processing enough works.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            parameter sets in the form of pandas.DataFrame (usually gets from 
+            self.read_df()).
+        filename : str
+            the name of the file for saving hit parameter sets.
+        """
+        p: Path = Path.cwd().parents[0]
+        res_p: Path = p / 'results' / f'{self.pattern}_params' / 'NormalSearch'
+        res_p.mkdir(parents=True, exist_ok=True)
+        save_p: Path = res_p / f'{filename}.pickle'
+
+        param_df: pd.DataFrame = pd.DataFrame([])
+        nhit: int = 0
+        nfail: int = 0
+        for i in range(len(df)):
+            params: Dict = df.to_dict(orient='index')[i]
+            self.model.set_params(params=params)
+            s: np.ndarray
+            info: Dict
+            s, info  = self.model.run_odeint()
+
+            if info['message'] == 'Excess work done on this call (perhaps wrong Dfun type).':
+                pass
+            
+            v: np.ndarray = s[self.samp_freq*self.samp_len//2:, 0]
+            if self.pattern != 'SPN':
+                pattern: analysis.WavePattern = self.wave_check.pattern(v=v)
+            else:
+                pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v)
+            
+            if pattern.name == self.pattern:
+                print('Hit!')
+                nhit += 1
+                param_df = pd.concat([param_df, params])
+            else:
+                nfail += 1
+        
+        print(f'Among {len(df)} parameter sets, {nhit} parameter sets hit.')
+        with open(str(save_p), "wb") as f:
+             pickle.dump(param_df, f)
+
+
+class RandomSearch():
     """ Random parameter search.
     
     Generate parameter sets randomly, and pick up those which recapitulate a cirtain
@@ -154,8 +285,8 @@ class RandomParamSearch():
 
         param_df: pd.DataFrame = pd.DataFrame([])
         niter: int = 0  # number of iteration
-        nhit: int = 0  # number of hits
-        nfail: int = 0  # number of oscillation
+        nhit: int = 0
+        nfail: int = 0
         st: float = time()  # start time : updated every 1 hour
         np.random.seed(rand_seed)
 
@@ -171,10 +302,10 @@ class RandomParamSearch():
                 pass
             
             v: np.ndarray = s[self.samp_freq*self.samp_len//2:, 0]
-            if self.pattern == 'SPN':
-                pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v)
-            else:
+            if self.pattern != 'SPN':
                 pattern: analysis.WavePattern = self.wave_check.pattern(v=v)
+            else:
+                pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v)
             
             if pattern.name == self.pattern:
                 print('Hit!')
@@ -214,7 +345,8 @@ class RandomParamSearch():
 
 if __name__ == '__main__':
     arg: List = sys.argv
-    date: str = arg[1]
+    search_method: str = arg[1]
+    date: str = arg[2]
     read: readinfo.Read = readinfo.Read(date=date)
     idf: pd.DataFrame = read.get_info()
 
@@ -229,16 +361,32 @@ if __name__ == '__main__':
         ion: bool = False
         concentration = None
 
-    rps = RandomParamSearch(
-        model=str(idf.loc['model'][1]), 
-        pattern=str(idf.loc['pattern'][1]), 
-        ncore=int(idf.loc['ncore'][1]), 
-        hr=int(idf.loc['hr'][1]), 
-        samp_freq=int(idf.loc['samp_freq'][1]), 
-        samp_len=int(idf.loc['samp_len'][1]), 
-        channel_bool=channel_bool, 
-        model_name=str(idf.loc['model_name'][1]), 
-        ion=ion, 
-        concentration=concentration, 
-    )
-    rps.multi_singleprocess()
+    if search_method == 'ns':  # Normal Search
+        ns = NormalSearch(
+            model=str(idf.loc['model'][1]), 
+            pattern=str(idf.loc['pattern'][1]), 
+            samp_freq=int(idf.loc['samp_freq'][1]), 
+            samp_len=int(idf.loc['samp_len'][1]), 
+            channel_bool=channel_bool, 
+            model_name=str(idf.loc['model_name'][1]), 
+            ion=ion, 
+            concentration=concentration, 
+        )
+        filename: str = arg[3]
+        df = ns.read_df(filename=filename)
+        ns.singleprocess(df=df, filename=filename)
+
+    elif search_method == 'rs':  # Random Search
+        rps = RandomSearch(
+            model=str(idf.loc['model'][1]), 
+            pattern=str(idf.loc['pattern'][1]), 
+            ncore=int(idf.loc['ncore'][1]), 
+            hr=int(idf.loc['hr'][1]), 
+            samp_freq=int(idf.loc['samp_freq'][1]), 
+            samp_len=int(idf.loc['samp_len'][1]), 
+            channel_bool=channel_bool, 
+            model_name=str(idf.loc['model_name'][1]), 
+            ion=ion, 
+            concentration=concentration, 
+        )
+        rps.multi_singleprocess()

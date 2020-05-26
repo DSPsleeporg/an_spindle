@@ -104,25 +104,6 @@ class NormalSearch:
                 raise TypeError('Designate channel in argument of X model.')
             self.model_name = model_name
             self.model = models.Xmodel(channel_bool, ion, concentration)
-
-    def read_df(self, filename: str) -> pd.DataFrame:
-        """ Read dataframe that contains parameter sets.
-
-        Parameters
-        ----------
-        filename : str
-            name of the pickle file that contains parameter sets
-
-        Returns
-        ----------
-        pd.DataFrame
-            parameter sets in the form of pandas.DataFrame
-        """
-        p: Path = Path.cwd().parents[0]
-        df_p: Path = p / 'info' / 'search_df' / f'{filename}.pickle'
-        with open(df_p, mode='rb') as f:
-            df: pd.DataFrame = pickle.load(f)
-        return df
     
     def singleprocess(self, df: pd.DataFrame, filename: str) -> None:
         """ Normal parameter search using single core.
@@ -373,7 +354,8 @@ if __name__ == '__main__':
             concentration=concentration, 
         )
         filename: str = arg[3]
-        df = ns.read_df(filename=filename)
+        df: pd.DataFrame = read.paramdf(filename=filename)
+        df = read._setcolname(df=df, model=str(idf.loc['model'][1]), channel_bool=channel_bool)
         ns.singleprocess(df=df, filename=filename)
 
     elif search_method == 'rs':  # Random Search

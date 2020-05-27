@@ -267,11 +267,11 @@ class ANmodel:
 
         tCa_log: np.ndarray = 2 * np.random.rand(1) + 1  # from 1 to 3
         tCa: np.ndarray = 10 ** tCa_log    # 10 ~ 1000
-        tCa_itr: Iterator = zip('t_ca', tCa)
+        tCa_dict: Dict = {'t_ca': float(tCa)}
 
         param_dict.update(gX_itr)
         param_dict.update(gR_itr)
-        param_dict.update(tCa_itr)
+        param_dict.update(tCa_dict)
         return param_dict
 
     def set_params(self, params: Dict) -> None:
@@ -339,7 +339,7 @@ class ANmodel:
         params['g_ampar']: float = self.ampar.get_g()
         params['g.nmdar']: float = self.nmdar.get_g()
         params['g_gabar']: float = self.gabar.get_g()
-        params['t_Ca']: float = self.tau_ca
+        params['t_ca']: float = self.tau_ca
         return params
 
     def dvdt(self, args: List[float]) -> float:
@@ -527,10 +527,10 @@ class SANmodel(ANmodel):
 
         tCa_log: np.ndarray = 2 * np.random.rand(1) + 1  # from 1 to 3
         tCa: np.ndarray = 10 ** tCa_log    # 10 ~ 1000
-        tCa_itr: Iterator = zip('t_ca', tCa)
+        tCa_dict: Dict = {'t_ca': float(tCa)}
 
         param_dict.update(gX_itr)
-        param_dict.update(tCa_itr)
+        param_dict.update(tCa_dict)
         return param_dict
 
     def set_params(self, params: Dict) -> None:
@@ -760,8 +760,8 @@ class Xmodel(ANmodel):
         if self.channel_bool['ca']:
             tCa_log: np.ndarray = 2 * np.random.rand(1) + 1  # from 1 to 3
             tCa: np.ndarray = 10 ** tCa_log    # 10 ~ 1000
-            tCa_itr: Iterator = zip('t_ca', tCa)
-            param_dict.update(tCa_itr)
+            tCa_dict: Dict = {'t_ca': float(tCa)}
+            param_dict.update(tCa_dict)
 
         return param_dict
 

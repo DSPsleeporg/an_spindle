@@ -152,6 +152,9 @@ class Plot:
 if __name__ == '__main__':
     arg: List = sys.argv
     date: str = arg[1]
+    year: str = f'20{date[:2]}'
+    month: str = str(int(date[2:4]))
+    day: str = date[4:6]
     read: readinfo.Read = readinfo.Read(date=date)
     idf: pd.DataFrame = read.get_info()
 
@@ -177,4 +180,4 @@ if __name__ == '__main__':
         ion=ion, 
         concentration=concentration
     )
-    plot.multi_singleprocess(date)
+    plot.multi_singleprocess(f'{year}_{month}_{day}')

@@ -143,7 +143,9 @@ class Plot:
                 num: int = pickle.load(f)
                 param_df: pd.DataFrame = pickle.load(f)
             tot_trial_num += num
-            args.append((param_df, core))
+            sdir_p = p / 'results' / 'SWS_soloplot' / f'{date}_{self.model_name}' / str(core)
+            sdir_p.mkdir(parents=True, exist_ok=True)
+            args.append((param_df, sdir_p))
         print(f'Simulation was conducted {tot_trial_num} times in total.')
         with Pool(processes=self.ncore) as pool:
             pool.map(self.singleprocess, args)

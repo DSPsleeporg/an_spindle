@@ -265,13 +265,13 @@ class ANmodel:
         gR: np.ndarray = (10 * np.ones(3)) ** gR_log  # 0.001 ~ 10
         gR_itr: Iterator = zip(gR_name, gR)
 
-        tCa_log: float = 2 * np.random.rand(1) + 1  # from 1 to 3
-        tCa: float = 10 ** tCa_log    # 10 ~ 1000
-        tCa_dict: Dict = {'t_ca': tCa}
+        tCa_log: np.ndarray = 2 * np.random.rand(1) + 1  # from 1 to 3
+        tCa: np.ndarray = 10 ** tCa_log    # 10 ~ 1000
+        tCa_itr: Iterator = zip('t_ca', tCa)
 
         param_dict.update(gX_itr)
         param_dict.update(gR_itr)
-        param_dict.update(tCa_dict)
+        param_dict.update(tCa_itr)
         return param_dict
 
     def set_params(self, params: Dict) -> None:
@@ -525,12 +525,12 @@ class SANmodel(ANmodel):
         gX: np.ndarray = (10 * np.ones(5)) ** gX_log  # 0.01 ~ 100
         gX_itr: Iterator = zip(gX_name, gX)
 
-        tCa_log: float = 2 * np.random.rand(1) + 1  # from 1 to 3
-        tCa: float = 10 ** tCa_log    # 10 ~ 1000
-        tCa_dict: Dict = {'t_ca': tCa}
+        tCa_log: np.ndarray = 2 * np.random.rand(1) + 1  # from 1 to 3
+        tCa: np.ndarray = 10 ** tCa_log    # 10 ~ 1000
+        tCa_itr: Iterator = zip('t_ca', tCa)
 
         param_dict.update(gX_itr)
-        param_dict.update(tCa_dict)
+        param_dict.update(tCa_itr)
         return param_dict
 
     def set_params(self, params: Dict) -> None:
@@ -758,10 +758,10 @@ class Xmodel(ANmodel):
         param_dict.update(gR_itr)
 
         if self.channel_bool['ca']:
-            tCa_log: float = 2 * np.random.rand(1) + 1  # from 1 to 3
-            tCa: float = 10 ** tCa_log    # 10 ~ 1000
-            tCa_dict: Dict = {'t_ca': tCa}
-            param_dict.update(tCa_dict)
+            tCa_log: np.ndarray = 2 * np.random.rand(1) + 1  # from 1 to 3
+            tCa: np.ndarray = 10 ** tCa_log    # 10 ~ 1000
+            tCa_itr: Iterator = zip('t_ca', tCa)
+            param_dict.update(tCa_itr)
 
         return param_dict
 

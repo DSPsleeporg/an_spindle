@@ -26,6 +26,9 @@ from typing import List, Dict, Tuple, Optional
 import models
 import readinfo
 
+
+plt.switch_backend('agg')
+
 class Plot:
     """ Plot parameter sets collected in RPS.
     

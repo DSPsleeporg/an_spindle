@@ -170,7 +170,7 @@ if __name__ == '__main__':
         model=str(idf.loc['model'][1]), 
         pattern=str(idf.loc['pattern'][1]), 
         ncore=int(idf.loc['ncore'][1]), 
-        samp_freq =int(idf(idf.loc['samp_freq'][1])), 
+        samp_freq=int(idf.loc['samp_freq'][1]), 
         samp_len=int(idf.loc['samp_len'][1]), 
         channel_bool=channel_bool, 
         model_name=str(idf.loc['model_name'][1]), 

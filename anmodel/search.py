@@ -46,6 +46,11 @@ import readinfo
 class NormalSearch:
     """ Normal Parameter Search (Parameter search from given parameter sets)
 
+    Parameter search from given parameter sets in the form of pd.Dataframe. 
+    This type of search is usefule when you want to check the firing states for
+    parameter sets which you previously collected, or parameter sets that is
+    modified from the original those (ex. bifurcaiton analysis).
+
     Parameters
     ----------
         model : str
@@ -143,6 +148,7 @@ class NormalSearch:
             else:
                 pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v)
             
+            print(pattern.name)
             if pattern.name == self.pattern:
                 print('Hit!')
                 nhit += 1

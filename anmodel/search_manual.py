@@ -21,7 +21,7 @@ from multiprocessing import Pool
 import pandas as pd
 from pathlib import Path
 import pickle
-from typing import List, Dict, Optional
+from typing import List, Dict, Tuple, Optional
 
 import models
 import readinfo
@@ -108,16 +108,18 @@ class Plot:
             self.model_name = model_name
             self.model = models.Xmodel(channel_bool, ion, concentration)
 
-    def singleprocess(self, param_df: pd.DataFrame, sdir_p: Path) -> None:
+    def singleprocess(self, args: Tuple[pd.DataFrame, Path]) -> None:
         """ Plot parameter sets in a single parameter dataframe.
 
         Parameters
         ----------
-        param_df : pd.DataFrame
-            dataframe containing parameter sets to be plotted
-        sdir_p : Path
-            path for save directory
+        args : Tuple[pd.DataFrame, Path]
+            param_df : pd.DataFrame
+                dataframe containing parameter sets to be plotted
+            sdir_p : Path
+                path for save directory
         """
+        param_df, sdir_p = args
         for i in range(len(param_df)):
             file_name: str = f'index_{i}.png'
             save_p: Path = sdir_p / file_name

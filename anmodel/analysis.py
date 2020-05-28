@@ -128,6 +128,7 @@ class WaveCheck:
         nummax: int = spw.tolist().index(maxamp)
         maxfre: float = f[nummax]
         numfire: int = self.freq_spike.count_spike(v)
+        ave_revspike_per_burst: float = self.freq_spike.get_burstinfo(v)[1]
         v_sq: np.ndarray = self.freq_spike.square_wave(v)
         v_group: pd.DataFrame = pd.DataFrame([v, v_sq]).T.groupby(1)
         if np.any(v_sq==0) and np.any(v_sq==1):
@@ -136,13 +137,16 @@ class WaveCheck:
         else:
             vmin_silent = vmin_burst = float(v_group.min().iloc[0])
 
+        if vmin_silent > vmin_burst: # doesn't need .iloc[0]?
+                return self.wave_pattern.SPN
+
         if 200 < max_potential:
             return self.wave_pattern.EXCLUDED
         elif (maxfre < 0.2) or (numfire < 5*2):
             return self.wave_pattern.RESTING
+        elif (0.2 < maxfre < 10.2) and (ave_revspike_per_burst > 5):
+            return self.wave_pattern.SPN
         elif (0.2 < maxfre < 10.2) and (numfire > 5*5*maxfre - 1):
-            if vmin_silent > vmin_burst: # doesn't need .iloc[0]?
-                return self.wave_pattern.SPN
             return self.wave_pattern.SWS
         elif (0.2 < maxfre < 10.2) and (numfire <= 5*5*maxfre - 1):
             return self.wave_pattern.SWS_FEW_SPIKES
@@ -236,9 +240,9 @@ class FreqSpike:
         num_burst : int
             number of burst event in the given simulation result.
         """
-        spiketime: np.ndarray = self.get_revspiketime(v)
-        isi: np.ndarray = np.diff(spiketime)
-        grouped_events: np.ndarray = np.split(spiketime, np.where(isi>isi_thres)[0]+1)
+        revspiketime: np.ndarray = self.get_revspiketime(v)
+        isi: np.ndarray = np.diff(revspiketime)
+        grouped_events: np.ndarray = np.split(revspiketime, np.where(isi>isi_thres)[0]+1)
         burst_events: np.ndarray = [x for x in grouped_events if len(x)>=spike_thres]
         num_burst: int = len(burst_events)
         if num_burst == 0:  # no burst events

@@ -131,10 +131,10 @@ class WaveCheck:
         v_sq: np.ndarray = self.freq_spike.square_wave(v)
         v_group: pd.DataFrame = pd.DataFrame([v, v_sq]).T.groupby(1)
         if np.any(v_sq==0) and np.any(v_sq==1):
-            vmin_silent: float = v_group.min().iloc[0]
-            vmin_burst: float = v_group.min().iloc[1]
+            vmin_silent: float = float(v_group.min().iloc[0])
+            vmin_burst: float = float(v_group.min().iloc[1])
         else:
-            vmin_silent = vmin_burst = v_group.min().iloc[0]
+            vmin_silent = vmin_burst = float(v_group.min().iloc[0])
 
         if 200 < max_potential:
             return self.wave_pattern.EXCLUDED
@@ -164,7 +164,7 @@ class FreqSpike:
     samp_freq : int
         sampling frequency of neuronal recordings (Hz)
     """
-    def __init__(self, samp_freq: int) -> None:
+    def __init__(self, samp_freq: int=1000) -> None:
         self.samp_freq = samp_freq
 
     def count_spike(self, v: np.ndarray) -> int:
@@ -192,7 +192,7 @@ class FreqSpike:
         nspike: int = int(ntraverse//2)
         return nspike
 
-    def get_spiketime(self, v: np.ndarray) -> np.ndarray:
+    def get_revspiketime(self, v: np.ndarray) -> np.ndarray:
         """ Get time index when spike occurs from the result of the simulation.
 
         Parameters
@@ -205,8 +205,8 @@ class FreqSpike:
         np.ndarray
             spike time index
         """
-        peaktime: np.ndarray = signal.argrelmax(v, order=1)[0]
-        spikeidx: np.ndarray = np.where(v[peaktime]>-20)[0]
+        peaktime: np.ndarray = signal.argrelmin(v, order=1)[0]
+        spikeidx: np.ndarray = np.where(v[peaktime]<-90)[0]
         spiketime: np.ndarray = peaktime[spikeidx]
         return spiketime
 
@@ -236,7 +236,7 @@ class FreqSpike:
         num_burst : int
             number of burst event in the given simulation result.
         """
-        spiketime: np.ndarray = self.get_spiketime(v)
+        spiketime: np.ndarray = self.get_revspiketime(v)
         isi: np.ndarray = np.diff(spiketime)
         grouped_events: np.ndarray = np.split(spiketime, np.where(isi>isi_thres)[0]+1)
         burst_events: np.ndarray = [x for x in grouped_events if len(x)>=spike_thres]
@@ -268,5 +268,7 @@ class FreqSpike:
             array contains 0 or 1, 0 during silent phase and 1 during burst phase.
         """
         burstidx: List = self.get_burstinfo(v)[0]
-        v_sq: np.ndarray = np.array([1 if i in burstidx else 0 for i in range(len(v))])
+        v_sq: np.ndarray = np.zeros(len(v))
+        for bidx in burstidx:
+            v_sq[bidx] = 1.
         return v_sq

@@ -15,6 +15,7 @@ __version__ = '1.0.0'
 __date__ = '23 May 2020'
 
 
+import csv
 import sys
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
@@ -137,6 +138,11 @@ class Plot:
     
     def multi_singleprocess(self, date: int) -> None:
         """ Plot parameter sets in multi parameter dataframe (using multi core).
+
+        Parameters
+        ----------
+        date : int
+            date when the simulation was run (eg. 2020_5_22)
         """
         p: Path = Path.cwd().parents[0]
         res_p = p / 'results' / f'{self.pattern}_params' / f'{date}_{self.model_name}'
@@ -155,10 +161,38 @@ class Plot:
         with Pool(processes=self.ncore) as pool:
             pool.map(self.singleprocess, args)
 
+    def merge(self, date: int) -> None:
+        """ Create hit parameter dataframe.
+
+        Parameters
+        ----------
+        date : int
+            date when the simulation was run (eg. 2020_5_22)
+        """
+        p: Path = Path.cwd().parents[0]
+        res_p: Path = p / 'results' / f'{self.pattern}_params' / f'{date}_{self.model_name}'
+        hitparam_df: pd.DataFrame = pd.DataFrame()
+        with open(res_p/'param_index.csv', 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                row: List[str] = [x for x in row if x != '']
+                core: int = int(row[0])
+                idx_list: List[int] = [int(s) for s in row[1:]]
+                param_p: Path = res_p / f'{self.pattern}_{date}_{core}.pickle'
+                with open(param_p, 'rb') as ff:
+                    _: int = pickle.load(ff)
+                    param_df: pd.DataFrame = pickle.load(ff)
+                    for idx in idx_list:
+                        hitparam_df = hitparam_df.append(param_df.iloc[idx, :])
+        save_p = res_p / f'{self.pattern}_{date}_hitmerged.pickle'
+        with open(save_p, 'wb') as f:
+            pickle.dump(hitparam_df, f)
+
 
 if __name__ == '__main__':
     arg: List = sys.argv
     date: str = arg[1]
+    method: str = arg[2]
     year: str = f'20{date[:2]}'
     month: str = str(int(date[2:4]))
     day: str = date[4:6]
@@ -187,4 +221,8 @@ if __name__ == '__main__':
         ion=ion, 
         concentration=concentration
     )
-    plot.multi_singleprocess(f'{year}_{month}_{day}')
+
+    if method == 'plot':
+        plot.multi_singleprocess(f'{year}_{month}_{day}') 
+    elif method == 'merge':
+        plot.merge(f'{year}_{month}_{day}')

@@ -23,6 +23,7 @@ from scipy.stats import gaussian_kde
 from typing import Dict, List, Iterator
 
 import anmodel
+from analysistools import tools
 
 class ParamHist:
     """ Draw parameter distribution histogram.
@@ -73,34 +74,12 @@ class ParamHist:
             self.param_df: pd.DataFrame = pickle.load(f)
         self.logparam_df: pd.DataFrame = self.param_df.applymap(np.log10)
 
-        self.grid_args: Dict = self.get_gridargs()
+        self.grid_args: Dict = tools.get_gridargs()
         self.bin_list: List = self.get_binlist()
 
         """
         TODO: implement in other than AN model
         """
-
-    def get_gridargs(self) -> Dict:
-        """ Get parameter range for histogram.
-
-        Returns
-        ----------
-        grid_args : Dict
-            parameter value range for each channel
-        """
-        grid_args: Dict = {}
-        gX_name: List[str] = ['g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
-                              'g_cav', 'g_kca', 'g_nap', 'g_kir']
-        gX_range: List[List] = [[-2., 2., 0.01]] * len(gX_name)
-        gX_itr: Iterator = zip(gX_name, gX_range)
-        grid_args.update(gX_itr)
-        gR_name: List[str] = ['g_ampar', 'g_nmdar', 'g_gabar']
-        gR_range: List[List] = [[-3., 1., 0.01]] * len(gR_name)
-        gR_itr: Iterator = zip(gR_name, gR_range)
-        grid_args.update(gR_itr)
-        tCa_dict: Dict = {'t_ca': [1., 3., 0.01]}
-        grid_args.update(tCa_dict)
-        return grid_args
     
     def get_binlist(self) -> List:
         """ Get binsize for each channel.

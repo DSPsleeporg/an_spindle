@@ -112,7 +112,7 @@ class Leak(Base):
     e : float
         equiribrium potential for the channel
     """
-    def __init__(self, g: Optional[int]=None, e: float=params.vL) -> None:
+    def __init__(self, g: Optional[float]=None, e: float=params.vL) -> None:
         super().__init__(g, e)
 
     def i(self, v:float) -> float:

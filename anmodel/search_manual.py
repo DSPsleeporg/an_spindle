@@ -161,7 +161,7 @@ class Plot:
         with Pool(processes=self.ncore) as pool:
             pool.map(self.singleprocess, args)
 
-    def merge(self, date: int) -> None:
+    def merge(self, pattern:str, date: int) -> None:
         """ Create hit parameter dataframe.
 
         Parameters
@@ -172,7 +172,7 @@ class Plot:
         p: Path = Path.cwd().parents[0]
         res_p: Path = p / 'results' / f'{self.pattern}_params' / f'{date}_{self.model_name}'
         hitparam_df: pd.DataFrame = pd.DataFrame()
-        with open(res_p/'param_index.csv', 'r') as f:
+        with open(res_p/f'{pattern}_param_index.csv', 'r') as f:
             reader = csv.reader(f)
             for row in reader:
                 row: List[str] = [x for x in row if x != '']
@@ -184,7 +184,7 @@ class Plot:
                     param_df: pd.DataFrame = pickle.load(ff)
                     for idx in idx_list:
                         hitparam_df = hitparam_df.append(param_df.iloc[idx, :])
-        save_p = res_p / f'{self.pattern}_{date}_hitmerged.pickle'
+        save_p = res_p / f'{pattern}_{date}_hitmerged.pickle'
         with open(save_p, 'wb') as f:
             pickle.dump(hitparam_df, f)
 
@@ -193,6 +193,8 @@ if __name__ == '__main__':
     arg: List = sys.argv
     date: str = arg[1]
     method: str = arg[2]
+    if method == 'merge':
+        pattern: str = arg[3]
     year: str = f'20{date[:2]}'
     month: str = str(int(date[2:4]))
     day: str = date[4:6]
@@ -225,4 +227,4 @@ if __name__ == '__main__':
     if method == 'plot':
         plot.multi_singleprocess(f'{year}_{month}_{day}') 
     elif method == 'merge':
-        plot.merge(f'{year}_{month}_{day}')
+        plot.merge(pattern, f'{year}_{month}_{day}')

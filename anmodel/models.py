@@ -337,7 +337,7 @@ class ANmodel:
         params['g_nap']: float = self.nap.get_g()
         params['g_kir']: float = self.kir.get_g()
         params['g_ampar']: float = self.ampar.get_g()
-        params['g.nmdar']: float = self.nmdar.get_g()
+        params['g_nmdar']: float = self.nmdar.get_g()
         params['g_gabar']: float = self.gabar.get_g()
         params['t_ca']: float = self.tau_ca
         return params

@@ -197,7 +197,7 @@ if __name__ == '__main__':
         pattern: str = arg[3]
     year: str = f'20{date[:2]}'
     month: str = str(int(date[2:4]))
-    day: str = date[4:6]
+    day: str = str(int(date[4:6]))
     read: readinfo.Read = readinfo.Read(date=date)
     idf: pd.DataFrame = read.get_info()
 

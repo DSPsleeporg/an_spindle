@@ -22,6 +22,7 @@ os.environ['NUMEXPR_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
 
 import numpy as np
+import sympy as sp
 from typing import Optional
 
 import params
@@ -90,6 +91,7 @@ class Base:
             current equilibrium potential.
         '''
         return self.e
+
 
 class Leak(Base):
     """ Leak channel (sodium / potassium).
@@ -264,7 +266,11 @@ class NavHH(Base):
         if v == -33.:
             return 1.
         else:
-            return 0.1 * (v+33.0) / (1.0-np.exp(-(v+33.0)/10.0))
+            try:
+                am = 0.1 * (v+33.0) / (1.0-np.exp(-(v+33.0)/10.0))
+            except:
+                am = 0.1 * (v+33.0) / (1.0-sp.exp(-(v+33.0)/10.0))
+            return am
 
     def bm(self, v: float) -> float:
         """ Calculate voltage-dependent transition rate for activation states.
@@ -281,7 +287,11 @@ class NavHH(Base):
         float
             transition rate for activation states
         """
-        return 4.0 * np.exp(-(v+53.7)/12.0)
+        try:
+            bm = 4.0 * np.exp(-(v+53.7)/12.0)
+        except:
+            bm = 4.0 * sp.exp(-(v+53.7)/12.0)
+        return bm
 
     def m_inf(self, v: float) -> float:
         """ Calculate activation variable for steady state.
@@ -301,6 +311,9 @@ class NavHH(Base):
         """
         return self.am(v) / (self.am(v) + self.bm(v))
 
+    def m_tau(self, v: float) -> float:
+        return 1 / (self.am(v) + self.bm(v))
+
     def ah(self, v: float) -> float:
         """ Calculate voltage-dependent transition rate for inactivation states.
 
@@ -316,7 +329,11 @@ class NavHH(Base):
         float
             transition rate for inactivation states
         """
-        return 0.07 * np.exp(-(v+50.0)/10.0)
+        try:
+            ah = 0.07 * np.exp(-(v+50.0)/10.0)
+        except:
+            ah = 0.07 * sp.exp(-(v+50.0)/10.0)
+        return ah
 
     def bh(self, v: float) -> float:
         """ Calculate voltage-dependent transition rate for inactivation states.
@@ -333,7 +350,11 @@ class NavHH(Base):
         float
             transition rate for inactivation states
         """
-        return 1.0 / (1.0 + np.exp(-(v+20.0)/10.0))
+        try:
+            bh = 1.0 / (1.0 + np.exp(-(v+20.0)/10.0))
+        except:
+            bh = 1.0 / (1.0 + sp.exp(-(v+20.0)/10.0))
+        return bh
 
     def h_inf(self, v: float) -> float:
         """ Calculate inactivation rate in steady state.
@@ -358,7 +379,7 @@ class NavHH(Base):
         return self.ah(v) / (self.ah(v) + self.bh(v))
 
     def h_tau(self, v: float) -> float:
-        return 1 / 4 * (self.ah(v)+self.bh(v))
+        return 1 / (self.ah(v)+self.bh(v))
 
     def dhdt(self, v: float, h: float) -> float:
         """ Differential equation for inactiavtion variable (not in steady state).
@@ -450,7 +471,11 @@ class KvHH(Base):
         if v == -34.:
             return 0.1
         else:
-            return 0.01 * (v+34.0) / (1.0-np.exp(-(v+34.0)/10.0))
+            try:
+                an = 0.01 * (v+34.0) / (1.0-np.exp(-(v+34.0)/10.0))
+            except:
+                an = 0.01 * (v+34.0) / (1.0-sp.exp(-(v+34.0)/10.0))
+            return an
 
     def bn(self, v: float) -> float:
         """ Calculate voltage-dependent transition rate for activation states.
@@ -467,7 +492,11 @@ class KvHH(Base):
         float
             transition rate for activation states
         """
-        return 0.125 * np.exp(-(v+44.0)/25.0)
+        try:
+            bn = 0.125 * np.exp(-(v+44.0)/25.0)
+        except:
+            bn = 0.125 * sp.exp(-(v+44.0)/25.0)
+        return bn
 
     def n_inf(self, v: float) -> float:
         """ Calculate activation variable in steady state.
@@ -586,7 +615,11 @@ class KvA(Base):
         float
             activation variable for the channel
         """
-        return 1.0 / (1.0 + np.exp(-(v+50.0)/20.0))
+        try:
+            m_inf = 1.0 / (1.0 + np.exp(-(v+50.0)/20.0))
+        except:
+            m_inf = 1.0 / (1.0 + sp.exp(-(v+50.0)/20.0))
+        return m_inf
 
     def h_inf(self, v: float) -> float:
         """ Calculate inactivation variable in steady state.
@@ -607,7 +640,11 @@ class KvA(Base):
         float
             inactivation variable for the channel
         """
-        return 1.0 / (1.0 + np.exp((v+80.0)/6.0))
+        try:
+            h_inf = 1.0 / (1.0 + np.exp((v+80.0)/6.0))
+        except:
+            h_inf = 1.0 / (1.0 + sp.exp((v+80.0)/6.0))
+        return h_inf
 
     def dhdt(self, v: float, h: float) -> float:
         """ Differential equation for inactiavtion variable (not in steady state).
@@ -694,7 +731,11 @@ class KvSI(Base):
         float
             activation variable for the channel
         """
-        return 1.0 / (1.0 + np.exp(-(v+34.0)/6.5))
+        try:
+            m_inf = 1.0 / (1.0 + np.exp(-(v+34.0)/6.5))
+        except:
+            m_inf = 1.0 / (1.0 + sp.exp(-(v+34.0)/6.5))
+        return m_inf
 
     def m_tau(self, v: float) -> float:
         """ Calculate time constant for the differential equation dm/dt
@@ -709,7 +750,11 @@ class KvSI(Base):
         float
             time constant for the differential equation dm/dt
         """
-        return 8.0 / (np.exp(-(v+55.0)/30.0) + np.exp((v+55.0)/30.0))
+        try:
+            m_tau = 8.0 / (np.exp(-(v+55.0)/30.0) + np.exp((v+55.0)/30.0))
+        except:
+            m_tau = 8.0 / (sp.exp(-(v+55.0)/30.0) + sp.exp((v+55.0)/30.0))
+        return m_tau
 
     def dmdt(self, v: float, m: float) -> float:
         """ Differential equation for actiavtion variable (not in steady state).
@@ -789,7 +834,11 @@ class Cav(Base):
         float
             activation variable for the channel
         """
-        return 1.0 / (1.0 + np.exp(-(v+20.0)/9.0))
+        try:
+            m_inf = 1.0 / (1.0 + np.exp(-(v+20.0)/9.0))
+        except:
+            m_inf = 1.0 / (1.0 + sp.exp(-(v+20.0)/9.0))
+        return m_inf
 
     def i(self, v: float) -> float:
         """ Calculate current that flows through the channel.
@@ -852,7 +901,11 @@ class NaP(Base):
         float
             activation variable for the channel
         """
-        return 1.0 / (1.0 + np.exp(-(v+55.7)/7.7))
+        try:
+            m_inf = 1.0 / (1.0 + np.exp(-(v+55.7)/7.7))
+        except:
+            m_inf = 1.0 / (1.0 + sp.exp(-(v+55.7)/7.7))
+        return m_inf
 
     def i(self, v: float) -> float:
         """ Calculate current that flows through the channel.
@@ -982,7 +1035,11 @@ class KIR(Base):
         float
             inactivation variable for the channel
         """
-        return 1.0/(1.0 + np.exp((v + 75.0)/4.0))
+        try:
+            h_inf = 1.0/(1.0 + np.exp((v + 75.0)/4.0))
+        except:
+            h_inf = 1.0/(1.0 + sp.exp((v + 75.0)/4.0))
+        return h_inf
 
     def i(self, v: float) -> float:
         """ Calculate current that flows through the channel.
@@ -1053,7 +1110,11 @@ class AMPAR(Base):
         float
             f(v) : firing rate
         """
-        return 1.0 / (1.0 + np.exp(-(v-20.0)/2.0))
+        try:
+            f = 1.0 / (1.0 + np.exp(-(v-20.0)/2.0))
+        except:
+            f = 1.0 / (1.0 + sp.exp(-(v-20.0)/2.0))
+        return f
 
     def dsdt(self, v: float, s: float) -> float:
         """ Differential equation for gating variable s.
@@ -1160,7 +1221,11 @@ class NMDAR(Base):
         float
             f(v) : firing rate
         """
-        return 1.0 / (1.0 + np.exp(-(v-20.0)/2.0))
+        try:
+            f = 1.0 / (1.0 + np.exp(-(v-20.0)/2.0))
+        except:
+            f = 1.0 / (1.0 + sp.exp(-(v-20.0)/2.0))
+        return f
 
     def dxdt(self, v: float, x: float) -> float:
         """ Differential equation for second-order gating variable x.
@@ -1278,7 +1343,11 @@ class GABAR(Base):
         float
             f(v) : firing rate
         """
-        return 1.0 / (1.0 + np.exp(-(v-20.0)/2.0))
+        try:
+            f = 1.0 / (1.0 + np.exp(-(v-20.0)/2.0))
+        except:
+            f = 1.0 / (1.0 + sp.exp(-(v-20.0)/2.0))
+        return f
 
     def dsdt(self, v: float, s: float) -> float:
         """ Differential equation for gating variable s.

@@ -191,8 +191,8 @@ class FreqSpike:
         ntraverse: int = 0
         ms: int = int(self.samp_freq / 1000)
         for i in range(len(v)-ms):
-            v = (v[i] + v[i+1]) / 2
-            ntraverse = np.count_nonzero(np.diff(np.sign(v[::ms] + 20)))
+            if (v[i]+20) * (v[i+ms]+20) < 0:            
+                ntraverse += 1
         nspike: int = int(ntraverse//2)
         return nspike
 

@@ -45,7 +45,7 @@ class Read:
     def channel_bool(self) -> List[bool]:
         cb_p: Path = self.p / 'info' / f'{self.date}_channel.csv'
         cb_df: pd.DataFrame = pd.read_csv(cb_p, header=None, index_col=0)
-        channel_bool: List[bool] = cb_df.loc[0].values.astype(bool).tolist()
+        channel_bool: List[bool] = cb_df.loc[:, 1].values.astype(bool).tolist()
         return channel_bool
         
     def concentration(self) -> Dict:

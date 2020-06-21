@@ -28,7 +28,7 @@ from analysistools import tools
 class ParamHist:
     """ Draw parameter distribution histogram.
 
-    TODO: implement in other than AN model
+    TODO: implement in other models
 
     Parameters
     ----------

@@ -188,15 +188,13 @@ class FreqSpike:
         int
             spike count
         """
-        ntraverse: int = 0
-        ms: int = int(self.samp_freq / 1000)
-        for i in range(len(v)-ms):
-            if (v[i]+20) * (v[i+ms]+20) < 0:            
-                ntraverse += 1
-        nspike: int = int(ntraverse//2)
+        peaktime: np.ndarray = signal.argrelmax(v, order=1)[0]
+        spikeidx: np.ndarray = np.where(v[peaktime]>-20)[0]
+        spiketime: np.ndarray = peaktime[spikeidx]
+        nspike: int = len(spiketime)
         return nspike
 
-    def get_revspiketime(self, v: np.ndarray) -> np.ndarray:
+    def get_spikeinfo(self, v: np.ndarray) -> np.ndarray:
         """ Get time index when spike occurs from the result of the simulation.
 
         Parameters
@@ -209,14 +207,15 @@ class FreqSpike:
         np.ndarray
             spike time index
         """
-        peaktime: np.ndarray = signal.argrelmin(v, order=1)[0]
-        spikeidx: np.ndarray = np.where(v[peaktime]<-90)[0]
+        peaktime: np.ndarray = signal.argrelmax(v, order=1)[0]
+        spikeidx: np.ndarray = np.where(v[peaktime]>-20)[0]
         spiketime: np.ndarray = peaktime[spikeidx]
-        return spiketime
+        nspike: int = len(spiketime)
+        return nspike, spiketime
 
     def get_burstinfo(self, v: np.ndarray, 
                       isi_thres: int=50, 
-                      spike_thres:int =5
+                      spike_thres:int =2
         ) -> (List, float, int):
         """ Get information around burst firing from the result of the simulation.
 
@@ -240,9 +239,10 @@ class FreqSpike:
         num_burst : int
             number of burst event in the given simulation result.
         """
-        revspiketime: np.ndarray = self.get_revspiketime(v)
-        isi: np.ndarray = np.diff(revspiketime)
-        grouped_events: np.ndarray = np.split(revspiketime, np.where(isi>isi_thres)[0]+1)
+        isi_thres: int = isi_thres * self.samp_freq / 1000
+        _, spiketime = self.get_spikeinfo(v)
+        isi: np.ndarray = np.diff(spiketime)
+        grouped_events: np.ndarray = np.split(spiketime, np.where(isi>isi_thres)[0]+1)
         burst_events: np.ndarray = [x for x in grouped_events if len(x)>=spike_thres]
         num_burst: int = len(burst_events)
         if num_burst == 0:  # no burst events

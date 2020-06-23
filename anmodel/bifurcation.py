@@ -84,10 +84,8 @@ if __name__ == '__main__':
     als = DetailAnalysis(
         channel='g_kvsi',
         magnif=magnif,
-        model='X',
-        channel_bool=[1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1],
-        model_name='YAN',
+        model='AN',
     )
-    with open('../results/previous_params/allparams.pickle', 'rb') as f:
+    with open('../results/previous_params/SPN_param_matome_processed.pickle', 'rb') as f:
         df = pickle.load(f)
     als.main(param_df=df)

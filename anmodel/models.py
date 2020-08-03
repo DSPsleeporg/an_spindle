@@ -408,8 +408,6 @@ class ANmodel:
             valuable list in a certain time
         time : float
             each time point to solve differential equation
-        args : list
-            additional argument to pass
         Returns
         ----------
         list (float)

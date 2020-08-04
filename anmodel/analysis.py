@@ -95,9 +95,9 @@ class WaveCheck:
             return self.wave_pattern.EXCLUDED
         elif (maxfre < 0.2) or (numfire < 5*2):
             return self.wave_pattern.RESTING
-        elif (0.2 < maxfre < 10.2) and (numfire > 5*5*maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire > 5*3*maxfre - 1):
             return self.wave_pattern.SWS
-        elif (0.2 < maxfre < 10.2) and (numfire <= 5*5*maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire <= 5*3*maxfre - 1):
             return self.wave_pattern.SWS_FEW_SPIKES
         elif maxfre > 10.2:
             return self.wave_pattern.AWAKE
@@ -137,18 +137,18 @@ class WaveCheck:
         else:
             vmin_silent = vmin_burst = float(v_group.min().iloc[0])
 
-        if vmin_silent > vmin_burst: # doesn't need .iloc[0]?
-                return self.wave_pattern.SPN
+        # if vmin_silent > vmin_burst: # doesn't need .iloc[0]?
+        #     return self.wave_pattern.SPN
 
         if 200 < max_potential:
             return self.wave_pattern.EXCLUDED
         elif (maxfre < 0.2) or (numfire < 5*2):
             return self.wave_pattern.RESTING
-        elif (0.2 < maxfre < 10.2) and (ave_revspike_per_burst > 5):
-            return self.wave_pattern.SPN
-        elif (0.2 < maxfre < 10.2) and (numfire > 5*5*maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire > 5*2*maxfre - 1):
+            if vmin_silent > vmin_burst:
+                return self.wave_pattern.SPN
             return self.wave_pattern.SWS
-        elif (0.2 < maxfre < 10.2) and (numfire <= 5*5*maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire <= 5*2*maxfre - 1):
             return self.wave_pattern.SWS_FEW_SPIKES
         elif maxfre > 10.2:
             return self.wave_pattern.AWAKE

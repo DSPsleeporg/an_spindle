@@ -191,8 +191,8 @@ class Plot:
 
 if __name__ == '__main__':
     arg: List = sys.argv
-    date: str = arg[1]
-    method: str = arg[2]
+    method: str = arg[1]
+    date: str = arg[2]
     if method == 'merge':
         pattern: str = arg[3]
     year: str = f'20{date[:2]}'

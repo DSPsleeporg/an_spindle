@@ -128,8 +128,8 @@ class WaveCheck:
         nummax: int = spw.tolist().index(maxamp)
         maxfre: float = f[nummax]
         numfire: int = self.freq_spike.count_spike(v)
-        ave_revspike_per_burst: float = self.freq_spike.get_burstinfo(v)[1]
-        v_sq: np.ndarray = self.freq_spike.square_wave(v)
+        ave_revspike_per_burst: float = self.freq_spike.get_burstinfo(v=v, spike='bottom')[1]
+        v_sq: np.ndarray = self.freq_spike.square_wave(v=v, spike='bottom')
         v_group: pd.DataFrame = pd.DataFrame([v, v_sq]).T.groupby(1)
         if np.any(v_sq==0) and np.any(v_sq==1):
             vmin_silent: float = float(v_group.min().iloc[0])
@@ -144,11 +144,11 @@ class WaveCheck:
             return self.wave_pattern.EXCLUDED
         elif (maxfre < 0.2) or (numfire < 5*2):
             return self.wave_pattern.RESTING
-        elif (0.2 < maxfre < 10.2) and (numfire > 5*2*maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (ave_revspike_per_burst>2):
             if vmin_silent > vmin_burst:
                 return self.wave_pattern.SPN
             return self.wave_pattern.SWS
-        elif (0.2 < maxfre < 10.2) and (numfire <= 5*2*maxfre - 1):
+        elif (0.2 < maxfre < 10.2) and (numfire <= 5*maxfre - 1):
             return self.wave_pattern.SWS_FEW_SPIKES
         elif maxfre > 10.2:
             return self.wave_pattern.AWAKE
@@ -213,9 +213,29 @@ class FreqSpike:
         nspike: int = len(spiketime)
         return nspike, spiketime
 
+    def get_ahpinfo(self, v:np.ndarray) -> np.ndarray:
+        """ Get time index when afterhyperpolarization (AHP) occurs.
+
+        Parameters
+        ----------
+        v : np.ndarray
+            membrane potential of a neuron
+
+        Returns
+        ----------
+        np.ndarray
+            spike time index
+        """
+        peaktime: np.ndarray = signal.argrelmin(v, order=1)[0]
+        spikeidx: np.ndarray = np.where(v[peaktime]<-80)[0]
+        spiketime: np.ndarray = peaktime[spikeidx]
+        nspike: int = len(spiketime)
+        return nspike, spiketime
+
     def get_burstinfo(self, v: np.ndarray, 
                       isi_thres: int=50, 
-                      spike_thres:int =2
+                      spike_thres:int =2, 
+                      spike: str = 'peak'
         ) -> (List, float, int):
         """ Get information around burst firing from the result of the simulation.
 
@@ -240,7 +260,10 @@ class FreqSpike:
             number of burst event in the given simulation result.
         """
         isi_thres: int = isi_thres * self.samp_freq / 1000
-        _, spiketime = self.get_spikeinfo(v)
+        if spike == 'peak':
+            _, spiketime = self.get_spikeinfo(v)
+        elif spike == 'bottom':
+            _, spiketime = self.get_ahpinfo(v)
         isi: np.ndarray = np.diff(spiketime)
         grouped_events: np.ndarray = np.split(spiketime, np.where(isi>isi_thres)[0]+1)
         burst_events: np.ndarray = [x for x in grouped_events if len(x)>=spike_thres]
@@ -258,7 +281,7 @@ class FreqSpike:
                 burstidx.append(idx)
             return burstidx, ave_spike_per_burst, num_burst
         
-    def square_wave(self, v: np.ndarray) -> np.ndarray:
+    def square_wave(self, v: np.ndarray, spike: str='peak') -> np.ndarray:
         """ approximate firing pattern of the given parameter set into square wave.
 
         Parameters
@@ -271,7 +294,7 @@ class FreqSpike:
         v_sq : np.ndarray
             array contains 0 or 1, 0 during silent phase and 1 during burst phase.
         """
-        burstidx: List = self.get_burstinfo(v)[0]
+        burstidx: List = self.get_burstinfo(v=v, spike=spike)[0]
         v_sq: np.ndarray = np.zeros(len(v))
         for bidx in burstidx:
             v_sq[bidx] = 1.

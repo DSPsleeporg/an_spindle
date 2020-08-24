@@ -28,6 +28,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import pickle
+from tqdm import tqdm
 from typing import Dict, List, Iterator, Optional
 
 import anmodel
@@ -117,7 +118,7 @@ class Normalization:
             df = pickle.load(f)
 
         res_df = pd.DataFrame([], columns=['start', 'end'], index=range(len(df)))
-        for i in range(len(df)):
+        for i in tqdm(range(len(df))):
             param = df.iloc[i, :]
             res_df.iloc[i, :] = self.norm(param)
         

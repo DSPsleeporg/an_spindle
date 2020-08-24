@@ -21,6 +21,9 @@ os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['NUMEXPR_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
 
+sys.path.append('../')
+sys.path.append('../anmodel')
+
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -28,6 +31,7 @@ import pickle
 from typing import Dict, List, Iterator, Optional
 
 import anmodel
+import analysistools
 
 class Normalization:
     def __init__(self, model: str='AN', channel_bool: Optional[Dict]=None, 
@@ -46,9 +50,9 @@ class Normalization:
             self.model_name = model_name
             self.model = anmodel.models.Xmodel(channel_bool, ion, concentration)
 
-    def norm(self, param: pd.Series) -> List[int]:
+    def norm(self, param: pd.Series, samp_len: int=10) -> List[int]:
         self.model.set_params(param)
-        s, _ = self.model.run_odeint(samp_freq=1000)
+        s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
         vmax: np.float64 = v.max()
         vmin: np.float64 = v.min()
@@ -99,18 +103,40 @@ class Normalization:
         for j in range(len(sh)-1):
             if sh[j+1]-sh[j] >= 0.5 * dh:
                 e.append(j)
-        st = sh[e[0]]
-        en = sh[e[6]]
-        return [st, en]
+        try:
+            st = sh[e[0]]
+            en = sh[e[6]]
+            return [st, en]
+        except IndexError:
+            self.norm(param=param, samp_len=samp_len*2)
 
     def main(self, filename: str, wavepattern: str='SPN') -> pd.DataFrame:
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{wavepattern}_params' / self.model_name
         with open(data_p/filename, 'rb') as f:
             df = pickle.load(f)
-            
+
         res_df = pd.DataFrame([], columns=['start', 'end'], index=range(len(df)))
         for i in range(len(df)):
             param = df.iloc[i, :]
             res_df.iloc[i, :] = self.norm(param)
-        return res_df
+        
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{wavepattern}_{self.model_name}'
+        with open(res_p, 'wb') as f:
+            pickle.dump(res_df, f)
+        # return res_df
+
+    
+if __name__ == '__main__':
+    arg: List = sys.argv
+    model = arg[1]
+    filename = arg[2]
+    if model == 'X':
+        channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
+        model_name = 'RAN'
+        norm = analysistools.norm_fre_mp.Normalization(
+            model, channel_bool, model_name
+            )
+    else:
+        norm = analysistools.norm_fre_mp.Normalization(model)
+    norm.main(filename)

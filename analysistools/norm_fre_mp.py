@@ -114,6 +114,7 @@ class Normalization:
     def main(self, filename: str, wavepattern: str='SPN') -> pd.DataFrame:
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{wavepattern}_params' / self.model_name
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{wavepattern}_{self.model_name}'
         with open(data_p/filename, 'rb') as f:
             df = pickle.load(f)
 
@@ -121,10 +122,11 @@ class Normalization:
         for i in tqdm(range(len(df))):
             param = df.iloc[i, :]
             res_df.iloc[i, :] = self.norm(param)
-        
-        res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{wavepattern}_{self.model_name}'
-        with open(res_p, 'wb') as f:
-            pickle.dump(res_df, f)
+
+            if i%10 == 0:
+                with open(res_p, 'wb') as f:
+                    pickle.dump(res_df, f)
+                print(f'Now i={i}, and pickled')
         # return res_df
 
     

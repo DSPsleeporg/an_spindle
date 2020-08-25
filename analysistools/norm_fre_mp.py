@@ -57,6 +57,7 @@ class Normalization:
         self.model.set_params(param)
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
+        del(s)
         vmax: np.float64 = v.max()
         vmin: np.float64 = v.min()
         vrange: np.float64 = vmax - vmin
@@ -111,15 +112,11 @@ class Normalization:
         else:
             self.norm_sws(param=param, samp_len=samp_len*2)
 
-        del(ss)
-        del(d)
-        del(k)
-        del(dia)
-
     def norm_spn(self, param: pd.Series, samp_len: int=10) -> List[int]:
         self.model.set_params(param)
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
+        del(s)
 
         als = anmodel.analysis.FreqSpike()
         burstidx, _, _ = als.get_burstinfo(v, spike='bottom')
@@ -130,8 +127,7 @@ class Normalization:
         if len(e) >= 7:
             return e[:7]
         else:
-            self.norm_spn(param=param, samp_len=samp_len*2)
-
+            self.norm_spn(param=param, samp_len=samp_len+10)
 
     def time(self, filename: str) -> None:
         p: Path = Path.cwd().parents[0]

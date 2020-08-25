@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
 """ 
-
+This is the module for normalizing the frequency of membrane potential. 
+You normalize the frequency of burst firings (1st~6th burst firing) and 
+plot normalized membrane potential, Ca, and so on. 
 """
 
-__author__ = 'Fumiya Tatsuki, Kensuke Yoshida, Tetsuya Yamada, \
-              Takahiro Katsumata, Shoi Shi, Hiroki R. Ueda'
+__author__ = 'Tetsuya Yamada'
 __status__ = 'Prepared'
 __version__ = '1.0.0'
 __date__ = '24 Aug 2020'
@@ -42,6 +43,24 @@ class Normalization:
                  channel_bool: Optional[Dict]=None, 
                  model_name: Optional[str]=None, 
                  ion: bool=False, concentration: Dict=None)-> None:
+        """ Normalize the frequency of membrane potential.
+
+        Parameters
+        ----------
+        model : str
+            the type of model a simulation is conducted (ex. AN, SAN, X)
+        wavepattern : str
+            the collected wavepattrn (ex. SWS, SPN)
+        channel_bool[Optional] : Dict
+            when X model is selected, you need to choose channels by this
+        model_name[Optional] : str
+            when X model is selected, you need to designate the model name (ex. RAN)
+        ion[Optional] : bool
+            whther you take extracellular ion concentration into account
+        concentration[Optional] : Dict
+            when ion=True, you need to designate initial ion concentrations
+        
+        """
         self.model = model
         self.wavepattern = wavepattern
         if self.model == 'AN':
@@ -57,6 +76,24 @@ class Normalization:
             self.model = anmodel.models.Xmodel(channel_bool, ion, concentration)
 
     def norm_sws(self, param: pd.Series, samp_len: int=10) -> List[int]:
+        """ Normalize frequency of burst firing in SWS firing pattern.
+
+        Parameters
+        ----------
+        param : pd.Series or Dict
+            single parameter set
+        samp_len : int
+            sampling time length (sec) (usually 10)
+        
+        Returns
+        ----------
+        List[int]
+            the index (time (ms)) of the 1st~6th ends of burst firing
+        
+        Notes
+        ----------
+            this algorithm is same as Yoshida et al., 2018
+        """
         self.model.set_params(param)
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
@@ -119,6 +156,20 @@ class Normalization:
                 return [None] * 7
 
     def norm_spn(self, param: pd.Series, samp_len: int=10) -> List[int]:
+        """ Normalize frequency of burst firing in SPN firing pattern.
+
+        Parameters
+        ----------
+        param : pd.Series or Dict
+            single parameter set
+        samp_len : int
+            sampling time length (sec) (usually 10)
+        
+        Returns
+        ----------
+        List[int]
+            the index (time (ms)) of the 1st~6th ends of burst firing
+        """
         self.model.set_params(param)
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
@@ -139,6 +190,13 @@ class Normalization:
                 return [None] * 7
 
     def time(self, filename: str) -> None:
+        """ Calculate time points for 1st~6th burst firing for all parameter sets.
+
+        Parameters
+        ----------
+        filename : str
+            the name of file in which parameter sets are contained
+        """
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_{self.model_name}_time.pickle'
@@ -163,6 +221,13 @@ class Normalization:
             pickle.dump(res_df, f)
 
     def mp_ca(self, filename: str) -> None:
+        """ Calculate normalized mp and ca for plotting heatmap.
+
+        Parameters
+        ----------
+        filename : str
+            the name of file in which parameter sets are contained
+        """
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         res_p: Path = p / 'results' / 'normalization_mp_ca' 
@@ -194,10 +259,17 @@ class Normalization:
 
         with open(res_p/f'{self.wavepattern}_{self.model_name}_mp.pickle', 'wb') as f:
             pickle.dump(hm_df, f)
+        with open(res_p/f'{self.wavepattern}_{self.model_name}_ca.pickle', 'wb') as f:
+            pickle.dump(hm_ca_df, f)
         
         plt.figure(figsize=(20, 20))
         sns.heatmap(hm_df.values.tolist(), cmap='jet')
         plt.savefig(res_p/f'{self.wavepattern}_{self.model_name}_mp_hm.png')
+
+        plt.figure(figsize=(20, 20))
+        sns.heatmap(hm_ca_df.values.tolist(), cmap='jet')
+        plt.savefig(res_p/f'{self.wavepattern}_{self.model_name}_ca_hm.png')
+
 
 if __name__ == '__main__':
     arg: List = sys.argv

@@ -243,21 +243,22 @@ class Normalization:
             e = time_df.iloc[i, :]
             if e[0] == None:
                 pass
-            samp_len = 10 + ((5000+e[6])//10000) * 10
-            self.model.set_params(param)
-            s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
-            v: np.ndarray = scipy.stats.zscore(s[5000:, 0])
-            ca: np.ndarray = scipy.stats.zscore(s[5000:, -1])
+            else:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+                self.model.set_params(param)
+                s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
+                v: np.ndarray = scipy.stats.zscore(s[5000:, 0])
+                ca: np.ndarray = scipy.stats.zscore(s[5000:, -1])
 
-            v_norm = []
-            ca_norm = []
-            for j in range(len(e)-1):
-                tlst = np.linspace(e[j], e[j+1], 9, dtype=int)
-                for k in range(len(tlst)-1):
-                    v_norm.append(v[tlst[k]:tlst[k+1]].var(ddof=0))
-                    ca_norm.append(ca[tlst[k]:tlst[k+1]].mean())
-            hm_df.iloc[i, :] = v_norm
-            hm_ca_df.iloc[i, :] = ca_norm
+                v_norm = []
+                ca_norm = []
+                for j in range(len(e)-1):
+                    tlst = np.linspace(e[j], e[j+1], 9, dtype=int)
+                    for k in range(len(tlst)-1):
+                        v_norm.append(v[tlst[k]:tlst[k+1]].var(ddof=0))
+                        ca_norm.append(ca[tlst[k]:tlst[k+1]].mean())
+                hm_df.iloc[i, :] = v_norm
+                hm_ca_df.iloc[i, :] = ca_norm
 
         with open(res_p/f'{self.wavepattern}_{self.model_name}_mp.pickle', 'wb') as f:
             pickle.dump(hm_df, f)

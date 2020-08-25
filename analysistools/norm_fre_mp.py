@@ -104,11 +104,9 @@ class Normalization:
         for j in range(len(sh)-1):
             if sh[j+1]-sh[j] >= 0.5 * dh:
                 e.append(j)
-        try:
-            st = sh[e[0]]
-            en = sh[e[6]]
-            return [st, en]
-        except IndexError:
+        if len(e) >= 7:
+            return sh[e[:7]]
+        else:
             self.norm_sws(param=param, samp_len=samp_len*2)
 
     def norm_spn(self, param: pd.Series, samp_len: int=10) -> List[int]:
@@ -122,22 +120,20 @@ class Normalization:
         e = []
         for lst in burstidx:
             e.append(lst[-1])
-        try:
-            st = e[0]
-            en = e[6]
-            return [st, en]
-        except IndexError:
+        if len(e) >= 7:
+            return e[:7]
+        else:
             self.norm_spn(param=param, samp_len=samp_len*2)
 
 
-    def main(self, filename: str, wavepattern: str='SPN') -> pd.DataFrame:
+    def time(self, filename: str, wavepattern: str='SPN') -> pd.DataFrame:
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{wavepattern}_params' / self.model_name
-        res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{wavepattern}_{self.model_name}.pickle'
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{wavepattern}_{self.model_name}_time.pickle'
         with open(data_p/filename, 'rb') as f:
             df = pickle.load(f)
 
-        res_df = pd.DataFrame([], columns=['start', 'end'], index=range(len(df)))
+        res_df = pd.DataFrame([], columns=range(7), index=range(len(df)))
         for i in tqdm(range(len(df))):
             param = df.iloc[i, :]
             if wavepattern == 'SWS':
@@ -166,4 +162,4 @@ if __name__ == '__main__':
             )
     else:
         norm = analysistools.norm_fre_mp.Normalization(model)
-    norm.main(filename)
+    norm.time(filename)

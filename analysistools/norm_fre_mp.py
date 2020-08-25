@@ -35,10 +35,12 @@ import anmodel
 import analysistools
 
 class Normalization:
-    def __init__(self, model: str='AN', channel_bool: Optional[Dict]=None, 
+    def __init__(self, model: str='AN', wavepattern: str='SPN', 
+                 channel_bool: Optional[Dict]=None, 
                  model_name: Optional[str]=None, 
                  ion: bool=False, concentration: Dict=None)-> None:
         self.model = model
+        self.wavepattern = wavepattern
         if self.model == 'AN':
             self.model_name = 'AN'
             self.model = anmodel.models.ANmodel(ion, concentration)
@@ -109,6 +111,11 @@ class Normalization:
         else:
             self.norm_sws(param=param, samp_len=samp_len*2)
 
+        del(ss)
+        del(d)
+        del(k)
+        del(dia)
+
     def norm_spn(self, param: pd.Series, samp_len: int=10) -> List[int]:
         self.model.set_params(param)
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
@@ -126,34 +133,60 @@ class Normalization:
             self.norm_spn(param=param, samp_len=samp_len*2)
 
 
-    def time(self, filename: str, wavepattern: str='SPN') -> pd.DataFrame:
+    def time(self, filename: str) -> None:
         p: Path = Path.cwd().parents[0]
-        data_p: Path = p / 'results' / f'{wavepattern}_params' / self.model_name
-        res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{wavepattern}_{self.model_name}_time.pickle'
+        data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_{self.model_name}_time.pickle'
         with open(data_p/filename, 'rb') as f:
             df = pickle.load(f)
 
         res_df = pd.DataFrame([], columns=range(7), index=range(len(df)))
         for i in tqdm(range(len(df))):
             param = df.iloc[i, :]
-            if wavepattern == 'SWS':
+            if self.wavepattern == 'SWS':
                 res_df.iloc[i, :] = self.norm_sws(param)
-            elif wavepattern == 'SPN':
+            elif self.wavepattern == 'SPN':
                 res_df.iloc[i, :] = self.norm_spn(param)
             else:
-                raise NameError(f'Wavepattern {wavepattern} is unvalid.')
+                raise NameError(f'Wavepattern {self.wavepattern} is unvalid.')
 
             if i%10 == 0:
                 with open(res_p, 'wb') as f:
                     pickle.dump(res_df, f)
                 print(f'Now i={i}, and pickled')
-        # return res_df
+        with open(res_p, 'wb') as f:
+            pickle.dump(res_df, f)
 
+    def mp(self, filename: str) -> None:
+        p: Path = Path.cwd().parents[0]
+        data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
+        time_p: Path = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_{self.model_name}_time.pickle'
+        with open(data_p/filename, 'rb') as f:
+            param_df = pickle.load(f)
+        with open(time_p, 'rb') as f:
+            time_df = pickle.load(f)            
+        
+        hm_df = pd.DataFrame([], columns=range(48), index=range(len(time_p)))
+        for i in range(len(time_p)):
+            param = param_df.iloc[i, :]
+            self.model.set_params(param)
+            s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
+            v: np.ndarray = s[5000:, 0]
+
+            e = time_df.iloc[i, :]
+            v_norm = []
+            for j in range(len(e)-1):
+                tlst = np.linspace(e[j], e[j+1], 9, dtype=int)
+                for k in range(len(tlst)-1):
+                    v_norm.append(v[tlst[k]:tlst[k+1]].var(ddof=0))
+            hm_df.iloc[i, :] = v_norm / max(v_norm)
     
+
 if __name__ == '__main__':
     arg: List = sys.argv
     model = arg[1]
-    filename = arg[2]
+    wavepattern = arg[2]
+    filename = arg[3]
     if model == 'X':
         channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
         model_name = 'RAN'

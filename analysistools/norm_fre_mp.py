@@ -276,6 +276,7 @@ if __name__ == '__main__':
     model = arg[1]
     wavepattern = arg[2]
     filename = arg[3]
+    method = arg[4]
     if model == 'X':
         channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
         model_name = 'RAN'
@@ -284,4 +285,8 @@ if __name__ == '__main__':
             )
     else:
         norm = analysistools.norm_fre_mp.Normalization(model, wavepattern)
-    norm.time(filename)
+    
+    if method == 'time':
+        norm.time(filename)
+    elif method == 'mp_ca':
+        norm.mp_ca(filename)

@@ -182,7 +182,7 @@ class Normalization:
             hm_df.iloc[i, :] = v_norm / max(v_norm)
 
             ca_norm = []
-            for j in range()
+            # for j in range()
 
         with open(res_p/f'{self.wavepattern}_{self.model_name}_mp.pickle', 'wb') as f:
             pickle.dump(hm_df, f)

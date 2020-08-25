@@ -238,9 +238,11 @@ class Normalization:
         
         hm_df = pd.DataFrame([], columns=range(48), index=range(len(time_df)))
         hm_ca_df = pd.DataFrame([], columns=range(48), index=range(len(time_df)))
-        for i in range(len(time_df)):
+        for i in tqdm(range(len(time_df))):
             param = param_df.iloc[i, :]
             e = time_df.iloc[i, :]
+            if e[0] == None:
+                pass
             samp_len = 10 + ((5000+e[6])//10000) * 10
             self.model.set_params(param)
             s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)

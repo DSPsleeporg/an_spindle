@@ -191,8 +191,8 @@ if __name__ == '__main__':
         channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
         model_name = 'RAN'
         norm = analysistools.norm_fre_mp.Normalization(
-            model, channel_bool, model_name
+            model, wavepattern, channel_bool, model_name
             )
     else:
-        norm = analysistools.norm_fre_mp.Normalization(model)
+        norm = analysistools.norm_fre_mp.Normalization(model, wavepattern)
     norm.time(filename)

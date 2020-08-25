@@ -24,10 +24,12 @@ os.environ['MKL_NUM_THREADS'] = '1'
 sys.path.append('../')
 sys.path.append('../anmodel')
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from pathlib import Path
 import pickle
+import seaborn as sns
 from tqdm import tqdm
 from typing import Dict, List, Iterator, Optional
 
@@ -153,30 +155,41 @@ class Normalization:
         with open(res_p, 'wb') as f:
             pickle.dump(res_df, f)
 
-    def mp(self, filename: str) -> None:
+    def mp_ca(self, filename: str) -> None:
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
-        time_p: Path = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_{self.model_name}_time.pickle'
+        res_p: Path = p / 'results' / 'normalization_mp_ca' 
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)
-        with open(time_p, 'rb') as f:
+        with open(res_p/f'{self.wavepattern}_{self.model_name}_time.pickle', 'rb') as f:
             time_df = pickle.load(f)            
         
-        hm_df = pd.DataFrame([], columns=range(48), index=range(len(time_p)))
-        for i in range(len(time_p)):
+        hm_df = pd.DataFrame([], columns=range(48), index=range(len(time_df)))
+        for i in range(len(time_df)):
             param = param_df.iloc[i, :]
+            e = time_df.iloc[i, :]
+            samp_len = 10 + ((5000+e[6])//10000) * 10
             self.model.set_params(param)
             s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
             v: np.ndarray = s[5000:, 0]
+            ca: np.ndarray = s[5000:, -1]
 
-            e = time_df.iloc[i, :]
             v_norm = []
             for j in range(len(e)-1):
                 tlst = np.linspace(e[j], e[j+1], 9, dtype=int)
                 for k in range(len(tlst)-1):
                     v_norm.append(v[tlst[k]:tlst[k+1]].var(ddof=0))
             hm_df.iloc[i, :] = v_norm / max(v_norm)
-    
+
+            ca_norm = []
+            for j in range()
+
+        with open(res_p/f'{self.wavepattern}_{self.model_name}_mp.pickle', 'wb') as f:
+            pickle.dump(hm_df, f)
+        
+        plt.figure(figsize=(20, 20))
+        sns.heatmap(hm_df.values.tolist(), cmap='jet')
+        plt.savefig(res_p/f'{self.wavepattern}_{self.model_name}_mp_hm.png')
 
 if __name__ == '__main__':
     arg: List = sys.argv

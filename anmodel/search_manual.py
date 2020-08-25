@@ -161,7 +161,7 @@ class Plot:
         with Pool(processes=self.ncore) as pool:
             pool.map(self.singleprocess, args)
 
-    def merge(self, pattern:str, date: int) -> None:
+    def merge(self, pattern:str, date: int, plot: bool=False) -> None:
         """ Create hit parameter dataframe.
 
         Parameters
@@ -187,6 +187,19 @@ class Plot:
         save_p = res_p / f'{pattern}_{date}_hitmerged.pickle'
         with open(save_p, 'wb') as f:
             pickle.dump(hitparam_df, f)
+
+        if plot:
+            res_p: Path = p / 'results' / f'{self.pattern}_solo_plot' / f'{date}_{self.model_name}' / 'hitmerged'
+            res_p.mkdir(parents=True)
+            for i in range(len(hitparam_df)):
+                param = hitparam_df.iloc[i, :]
+                self.model.set_params(param)
+                s, _ = self.model.run_odeint()
+                plt.plot(s[self.samp_freq*self.samp_len//2:, 0])
+                plt.xlabel('time (msec)')
+                plt.ylabel('V (mV)')
+                plt.savefig(res_p/f'integ_index_{i}')
+                plt.close()
 
 
 if __name__ == '__main__':
@@ -228,3 +241,5 @@ if __name__ == '__main__':
         plot.multi_singleprocess(f'{year}_{month}_{day}') 
     elif method == 'merge':
         plot.merge(pattern, f'{year}_{month}_{day}')
+    elif method == 'merge_plot':
+        plot.merge(pattern, f'{year}_{month}_{day}', plot=True)

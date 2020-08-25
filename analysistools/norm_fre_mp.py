@@ -29,6 +29,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import pickle
+import scipy.stats
 import seaborn as sns
 from tqdm import tqdm
 from typing import Dict, List, Iterator, Optional
@@ -112,7 +113,10 @@ class Normalization:
         if len(e) >= 7:
             return sh[e[:7]]
         else:
-            self.norm_sws(param=param, samp_len=samp_len*2)
+            if samp_len <=20:
+                self.norm_sws(param=param, samp_len=samp_len+10)
+            else:
+                return [None] * 7
 
     def norm_spn(self, param: pd.Series, samp_len: int=10) -> List[int]:
         self.model.set_params(param)
@@ -129,7 +133,10 @@ class Normalization:
         if len(e) >= 7:
             return e[:7]
         else:
-            self.norm_spn(param=param, samp_len=samp_len+10)
+            if samp_len <= 20:
+                self.norm_spn(param=param, samp_len=samp_len+10)
+            else:
+                return [None] * 7
 
     def time(self, filename: str) -> None:
         p: Path = Path.cwd().parents[0]
@@ -165,24 +172,25 @@ class Normalization:
             time_df = pickle.load(f)            
         
         hm_df = pd.DataFrame([], columns=range(48), index=range(len(time_df)))
+        hm_ca_df = pd.DataFrame([], columns=range(48), index=range(len(time_df)))
         for i in range(len(time_df)):
             param = param_df.iloc[i, :]
             e = time_df.iloc[i, :]
             samp_len = 10 + ((5000+e[6])//10000) * 10
             self.model.set_params(param)
             s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
-            v: np.ndarray = s[5000:, 0]
-            ca: np.ndarray = s[5000:, -1]
+            v: np.ndarray = scipy.stats.zscore(s[5000:, 0])
+            ca: np.ndarray = scipy.stats.zscore(s[5000:, -1])
 
             v_norm = []
+            ca_norm = []
             for j in range(len(e)-1):
                 tlst = np.linspace(e[j], e[j+1], 9, dtype=int)
                 for k in range(len(tlst)-1):
                     v_norm.append(v[tlst[k]:tlst[k+1]].var(ddof=0))
-            hm_df.iloc[i, :] = v_norm / max(v_norm)
-
-            ca_norm = []
-            # for j in range()
+                    ca_norm.append(ca[tlst[k]:tlst[k+1]].mean())
+            hm_df.iloc[i, :] = v_norm
+            hm_ca_df.iloc[i, :] = ca_norm
 
         with open(res_p/f'{self.wavepattern}_{self.model_name}_mp.pickle', 'wb') as f:
             pickle.dump(hm_df, f)

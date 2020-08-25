@@ -51,7 +51,7 @@ class Normalization:
             self.model_name = model_name
             self.model = anmodel.models.Xmodel(channel_bool, ion, concentration)
 
-    def norm(self, param: pd.Series, samp_len: int=10) -> List[int]:
+    def norm_sws(self, param: pd.Series, samp_len: int=10) -> List[int]:
         self.model.set_params(param)
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
@@ -109,19 +109,43 @@ class Normalization:
             en = sh[e[6]]
             return [st, en]
         except IndexError:
-            self.norm(param=param, samp_len=samp_len*2)
+            self.norm_sws(param=param, samp_len=samp_len*2)
+
+    def norm_spn(self, param: pd.Series, samp_len: int=10) -> List[int]:
+        self.model.set_params(param)
+        s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
+        v: np.ndarray = s[5000:, 0]
+
+        als = anmodel.analysis.FreqSpike()
+        burstidx, _, _ = als.get_burstinfo(v, spike='bottom')
+        
+        e = []
+        for lst in burstidx:
+            e.append(lst[-1])
+        try:
+            st = e[0]
+            en = e[6]
+            return [st, en]
+        except IndexError:
+            self.norm_spn(param=param, samp_len=samp_len*2)
+
 
     def main(self, filename: str, wavepattern: str='SPN') -> pd.DataFrame:
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{wavepattern}_params' / self.model_name
-        res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{wavepattern}_{self.model_name}'
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{wavepattern}_{self.model_name}.pickle'
         with open(data_p/filename, 'rb') as f:
             df = pickle.load(f)
 
         res_df = pd.DataFrame([], columns=['start', 'end'], index=range(len(df)))
         for i in tqdm(range(len(df))):
             param = df.iloc[i, :]
-            res_df.iloc[i, :] = self.norm(param)
+            if wavepattern == 'SWS':
+                res_df.iloc[i, :] = self.norm_sws(param)
+            elif wavepattern == 'SPN':
+                res_df.iloc[i, :] = self.norm_spn(param)
+            else:
+                raise NameError(f'Wavepattern {wavepattern} is unvalid.')
 
             if i%10 == 0:
                 with open(res_p, 'wb') as f:

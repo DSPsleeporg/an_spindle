@@ -208,7 +208,7 @@ class FreqSpike:
             spike time index
         """
         peaktime: np.ndarray = signal.argrelmax(v, order=1)[0]
-        spikeidx: np.ndarray = np.where(v[peaktime]>-20)[0]
+        spikeidx: np.ndarray = np.where(v[peaktime]>-40)[0]
         spiketime: np.ndarray = peaktime[spikeidx]
         nspike: int = len(spiketime)
         return nspike, spiketime

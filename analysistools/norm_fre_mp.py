@@ -38,6 +38,7 @@ from typing import Dict, List, Iterator, Optional
 import anmodel
 import analysistools
 
+
 class Normalization:
     def __init__(self, model: str='AN', wavepattern: str='SPN', 
                  channel_bool: Optional[Dict]=None, 

@@ -149,7 +149,7 @@ class Normalization:
             if sh[j+1]-sh[j] >= 0.5 * dh:
                 e.append(j)
         if len(e) >= 7:
-            return sh[e[:7]]
+            return [sh[i] for i in range(7)]
         else:
             if samp_len <=20:
                 self.norm_sws(param=param, samp_len=samp_len+10)

@@ -58,9 +58,10 @@ class Bifurcation:
     def getinfo(self, v: np.ndarray) -> List[float]:
         if self.wavepattern == 'SWS':
             nspike, _ = self.fs.get_spikeinfo(v)
+            sq: np.ndarray = self.fs.square_wave(v, spike='peak')
         elif self.wavepattern == 'SPN':
             nspike, _ = self.fs.get_ahpinfo(v)
-        sq: np.ndarray = self.fs.square_wave(v)
+            sq: np.ndarray = self.fs.square_wave(v, spike='bottom')
         lenburst: int = len(np.where(sq==1)[0])
         lensilent: int = len(np.where(sq==0)[0])
         reslst: List[float] = [nspike, 

@@ -154,7 +154,7 @@ class Plot:
                 num: int = pickle.load(f)
                 param_df: pd.DataFrame = pickle.load(f)
             tot_trial_num += num
-            sdir_p = p / 'results' / 'SWS_soloplot' / f'{date}_{self.model_name}' / str(core)
+            sdir_p = p / 'results' / f'{self.pattern}_soloplot' / f'{date}_{self.model_name}' / str(core)
             sdir_p.mkdir(parents=True, exist_ok=True)
             args.append((param_df, sdir_p))
         print(f'Simulation was conducted {tot_trial_num} times in total.')
@@ -174,11 +174,13 @@ class Plot:
         hitparam_df: pd.DataFrame = pd.DataFrame()
         with open(res_p/f'{pattern}_param_index.csv', 'r') as f:
             reader = csv.reader(f)
-            for row in reader:
+            for i, row in enumerate(reader):
                 row: List[str] = [x for x in row if x != '']
-                core: int = int(row[0])
-                idx_list: List[int] = [int(s) for s in row[1:]]
-                param_p: Path = res_p / f'{self.pattern}_{date}_{core}.pickle'
+                # core: int = int(row[0])
+                idx_list: List[int] = [int(s) for s in row]
+                print(i)
+                print(idx_list)
+                param_p: Path = res_p / f'{self.pattern}_{date}_{i}.pickle'
                 with open(param_p, 'rb') as ff:
                     _: int = pickle.load(ff)
                     param_df: pd.DataFrame = pickle.load(ff)

@@ -97,7 +97,8 @@ class Bifurcation:
                       ]
         df: pd.DataFrame = pd.DataFrame(columns=data)
         for i in tqdm(range(len(time_df))):
-            param = param_df.iloc[i, :]
+            param: pd.Series = copy(param_df.iloc[i, :])
+            param[self.channel] = param[self.channel] * self.magnif
             e = time_df.iloc[i, :]
             if e[0] == None:
                 pass

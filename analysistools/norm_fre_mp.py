@@ -269,7 +269,7 @@ class Normalization:
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)
         with open(res_p/f'{self.wavepattern}_{self.model_name}_time.pickle', 'rb') as f:
-            time_df = pickle.load(f)            
+            time_df = pickle.load(f)
         
         hm_df = pd.DataFrame([], columns=range(48), index=range(len(time_df)))
         hm_ca_df = pd.DataFrame([], columns=range(48), index=range(len(time_df)))

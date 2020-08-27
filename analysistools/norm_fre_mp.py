@@ -76,7 +76,7 @@ class Normalization:
             self.model_name = model_name
             self.model = anmodel.models.Xmodel(channel_bool, ion, concentration)
 
-    def norm_sws(self, param: pd.Series, samp_len: int=10) -> List[int]:
+    def norm_yoshida(self, param: pd.Series, samp_len: int=10) -> List[int]:
         """ Normalize frequency of burst firing in SWS firing pattern.
 
         Parameters
@@ -153,6 +153,40 @@ class Normalization:
         else:
             if samp_len <=20:
                 self.norm_sws(param=param, samp_len=samp_len+10)
+            else:
+                return [None] * 7
+
+    def norm_sws(self, param: pd.Series, samp_len: int=10) -> List[int]:
+        """ Normalize frequency of burst firing in SWS firing pattern.
+
+        Parameters
+        ----------
+        param : pd.Series or Dict
+            single parameter set
+        samp_len : int
+            sampling time length (sec) (usually 10)
+        
+        Returns
+        ----------
+        List[int]
+            the index (time (ms)) of the 1st~6th ends of burst firing
+        """
+        self.model.set_params(param)
+        s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
+        v: np.ndarray = s[5000:, 0]
+        del(s)
+
+        als = anmodel.analysis.FreqSpike()
+        burstidx, _, _ = als.get_burstinfo(v, spike='peak')
+
+        e = []
+        for lst in burstidx:
+            e.append(lst[-1])
+        if len(e) >= 7:
+            return e[:7]
+        else:
+            if samp_len <= 20:
+                self.norm_spn(param=param, samp_len=samp_len+10)
             else:
                 return [None] * 7
 

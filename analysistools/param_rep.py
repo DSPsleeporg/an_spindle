@@ -40,11 +40,11 @@ class PCA:
 
         self.pca = sklearn.decomposition.PCA()
 
-    def main(self, param_df: pd.DataFrame) -> Tuple:
+    def main(self, param_df: pd.DataFrame, pc: int=2) -> Tuple:
         logparam_df = param_df.applymap(np.log10)
         normparam_df = self.normalize(logparam_df)
         pc_df, pc_cov = self.run_pca(normparam_df)
-        maxidx = self.get_repidx(pc_df, pc=2)
+        maxidx = self.get_repidx(pc_df, pc=pc)
         repparam = param_df.iloc[maxidx]
         reppc = pc_df.iloc[maxidx]
         return (pc_df, pc_cov, repparam, reppc)

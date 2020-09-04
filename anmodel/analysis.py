@@ -270,8 +270,8 @@ class FreqSpike:
         num_burst: int = len(burst_events)
         if num_burst == 0:  # no burst events
             ave_spike_per_burst: float = 0.
+            burst_events: List = []
             burstidx: List = []
-            return burstidx, ave_spike_per_burst, num_burst
         else:
             ave_spike_per_burst: float = len(np.concatenate(burst_events)) / num_burst
             padding: List = [np.diff(x).mean() for x in burst_events]
@@ -279,7 +279,7 @@ class FreqSpike:
             for i in range(len(burst_events)):
                 idx: List = [j for j in range(len(v)) if burst_events[i][0]-padding[i]<j<burst_events[i][-1]+padding[i]]
                 burstidx.append(idx)
-            return burstidx, ave_spike_per_burst, num_burst
+        return burst_events, burstidx, ave_spike_per_burst, num_burst
         
     def square_wave(self, v: np.ndarray, spike: str='peak') -> np.ndarray:
         """ approximate firing pattern of the given parameter set into square wave.
@@ -294,7 +294,7 @@ class FreqSpike:
         v_sq : np.ndarray
             array contains 0 or 1, 0 during silent phase and 1 during burst phase.
         """
-        burstidx: List = self.get_burstinfo(v=v, spike=spike)[0]
+        burstidx: List = self.get_burstinfo(v=v, spike=spike)[1]
         v_sq: np.ndarray = np.zeros(len(v))
         for bidx in burstidx:
             v_sq[bidx] = 1.

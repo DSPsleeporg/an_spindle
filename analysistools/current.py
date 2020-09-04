@@ -40,36 +40,37 @@ import analysistools
 
 
 class AN:
-    def __init__(self,
+    def __init__(self, param: pd.Series,
                  ion: bool=False, concentration: Dict=None) -> None:
         self.model = anmodel.models.ANmodel()
+        self.set_params(param)
 
     def set_params(self, param: pd.Series) -> None:
-        self.leak = anmodel.channels.Leak(g=param['g_leak'])
+        self.leak = anmodel.channels.Leak(g=float(param['g_leak']))
         self.leak.set_div()
-        self.nav = anmodel.channels.NavHH(g=param['g_nav'])
-        self.kvhh = anmodel.channels.KvHH(g=param['g_kvhh'])
-        self.kva = anmodel.channels.KvA(g=param['g_kva'])
-        self.kvsi = anmodel.channels.KvSI(g=param['g_kvsi'])
-        self.cav = anmodel.channels.Cav(g=param['g_cav'])
-        self.nap = anmodel.channels.NaP(g=param['g_nap'])
-        self.kca = anmodel.channels.KCa(g=param['g_kca'])
-        self.kir = anmodel.channels.KIR(g=param['g_kir'])
-        self.ampar = anmodel.channels.AMPAR(g=param['g_ampar'])
-        self.nmdar = anmodel.channels.NMDAR(g=param['g_nmdar'])
-        self.gabar = anmodel.channels.GABAR(g=param['g_gabar'])
+        self.nav = anmodel.channels.NavHH(g=float(param['g_nav']))
+        self.kvhh = anmodel.channels.KvHH(g=float(param['g_kvhh']))
+        self.kva = anmodel.channels.KvA(g=float(param['g_kva']))
+        self.kvsi = anmodel.channels.KvSI(g=float(param['g_kvsi']))
+        self.cav = anmodel.channels.Cav(g=float(param['g_cav']))
+        self.nap = anmodel.channels.NaP(g=float(param['g_nap']))
+        self.kca = anmodel.channels.KCa(g=float(param['g_kca']))
+        self.kir = anmodel.channels.KIR(g=float(param['g_kir']))
+        self.ampar = anmodel.channels.AMPAR(g=float(param['g_ampar']))
+        self.nmdar = anmodel.channels.NMDAR(g=float(param['g_nmdar']))
+        self.gabar = anmodel.channels.GABAR(g=float(param['g_gabar']))
 
     def get(self, s: np.ndarray) -> List[np.ndarray]:
-        i_leak = self.leak.i(v=s[:, 0])
-        i_kl = self.leak.ikl(v=s[:, 0])
-        i_nal = self.leak.inal(v=s[:, 0])
+        i_leak = np.array([self.leak.i(v=s[i, 0]) for i in range(len(s))])
+        i_kl = np.array([self.leak.ikl(v=s[i, 0]) for i in range(len(s))])
+        i_nal = np.array([self.leak.inal(v=s[i, 0]) for i in range(len(s))])
         i_nav = np.array([self.nav.i(v=s[i, 0], h=s[i, 1]) for i in range(len(s))])
         i_kvhh = np.array([self.kvhh.i(v=s[i, 0], n=s[i, 2]) for i in range(len(s))])
         i_kva = np.array([self.kva.i(v=s[i, 0], h=s[i, 3]) for i in range(len(s))])
         i_kvsi = np.array([self.kvsi.i(v=s[i, 0], m=s[i, 4]) for i in range(len(s))])
         i_cav = np.array([self.cav.i(v=s[i, 0]) for i in range(len(s))])
         i_nap = np.array([self.nap.i(v=s[i, 0]) for i in range(len(s))])
-        i_kca = self.kca.i(v=s[:, 0], ca=s[:, 9])
+        i_kca = np.array([self.kca.i(v=s[i, 0], ca=s[i, 9]) for i in range(len(s))])
         i_kir = np.array([self.kir.i(v=s[i, 0]) for i in range(len(s))])
         i_ampar = np.array([self.ampar.i(v=s[i, 0], s=s[i, 5]) for i in range(len(s))])
         i_nmdar = np.array([self.nmdar.i(v=s[i, 0], s=s[i, 7]) for i in range(len(s))])
@@ -119,23 +120,24 @@ class SAN:
     def __init__(self, param: pd.Series,
                  ion: bool=False, concentration: Dict=None) -> None:
         self.model = anmodel.models.SANmodel()
+        self.set_params(param)
 
     def set_params(self, param: pd.Series) -> None:
-        self.leak = anmodel.channels.Leak(g=param['g_leak'])
+        self.leak = anmodel.channels.Leak(g=float(param['g_leak']))
         self.leak.set_div()
-        self.kvhh = anmodel.channels.KvHH(g=param['g_kvhh'])
-        self.cav = anmodel.channels.Cav(g=param['g_cav'])
-        self.nap = anmodel.channels.NaP(g=param['g_nap'])
-        self.kca = anmodel.channels.KCa(g=param['g_kca'])
+        self.kvhh = anmodel.channels.KvHH(g=float(param['g_kvhh']))
+        self.cav = anmodel.channels.Cav(g=float(param['g_cav']))
+        self.nap = anmodel.channels.NaP(g=float(param['g_nap']))
+        self.kca = anmodel.channels.KCa(g=float(param['g_kca']))
 
     def get(self, s: np.ndarray) -> List[np.ndarray]:
-        i_leak = self.leak.i(v=s[:, 0])
-        i_kl = self.leak.ikl(v=s[:, 0])
-        i_nal = self.leak.inal(v=s[:, 0])
-        i_kvhh = np.array([self.kvhh.i(v=s[i, 0], n=s[i, 2]) for i in range(len(s))])
+        i_leak = np.array([self.leak.i(v=s[i, 0]) for i in range(len(s))])
+        i_kl = np.array([self.leak.ikl(v=s[i, 0]) for i in range(len(s))])
+        i_nal = np.array([self.leak.inal(v=s[i, 0]) for i in range(len(s))])
+        i_kvhh = np.array([self.kvhh.i(v=s[i, 0], n=s[i, 1]) for i in range(len(s))])
         i_cav = np.array([self.cav.i(v=s[i, 0]) for i in range(len(s))])
         i_nap = np.array([self.nap.i(v=s[i, 0]) for i in range(len(s))])
-        i_kca = self.kca.i(v=s[:, 0], ca=s[:, 9])
+        i_kca = np.array([self.kca.i(v=s[i, 0], ca=s[i, 2]) for i in range(len(s))])        
         i_lst = [
             i_leak, i_kl, i_nal, i_kvhh, 
             i_cav, i_nap, i_kca
@@ -169,23 +171,24 @@ class X:
     def __init__(self, param: pd.Series, channel_bool: List, 
                  ion: bool=False, concentration: Dict=None) -> None:
         self.model = anmodel.models.Xmodel(channel_bool)
+        self.set_params(param)
 
     def set_params(self, param: pd.Series) -> None:
-        self.leak = anmodel.channels.Leak(g=param['g_leak'])
+        self.leak = anmodel.channels.Leak(g=float(param['g_leak']))
         self.leak.set_div()
-        self.kvsi = anmodel.channels.KvSI(g=param['g_kvsi'])
-        self.cav = anmodel.channels.Cav(g=param['g_cav'])
-        self.nap = anmodel.channels.NaP(g=param['g_nap'])
-        self.kca = anmodel.channels.KCa(g=param['g_kca'])
+        self.kvsi = anmodel.channels.KvSI(g=float(param['g_kvsi']))
+        self.cav = anmodel.channels.Cav(g=float(param['g_cav']))
+        self.nap = anmodel.channels.NaP(g=float(param['g_nap']))
+        self.kca = anmodel.channels.KCa(g=float(param['g_kca']))
 
     def get(self, s: np.ndarray) -> List[np.ndarray]:
-        i_leak = self.leak.i(v=s[:, 0])
-        i_kl = self.leak.ikl(v=s[:, 0])
-        i_nal = self.leak.inal(v=s[:, 0])
-        i_kvsi = np.array([self.kvsi.i(v=s[i, 0], m=s[i, 4]) for i in range(len(s))])
+        i_leak = np.array([self.leak.i(v=s[i, 0]) for i in range(len(s))])
+        i_kl = np.array([self.leak.ikl(v=s[i, 0]) for i in range(len(s))])
+        i_nal = np.array([self.leak.inal(v=s[i, 0]) for i in range(len(s))])
+        i_kvsi = np.array([self.kvsi.i(v=s[i, 0], m=s[i, 1]) for i in range(len(s))])
         i_cav = np.array([self.cav.i(v=s[i, 0]) for i in range(len(s))])
         i_nap = np.array([self.nap.i(v=s[i, 0]) for i in range(len(s))])
-        i_kca = self.kca.i(v=s[:, 0], ca=s[:, 9])
+        i_kca = np.array([self.kca.i(v=s[i, 0], ca=s[i, 2]) for i in range(len(s))])
         i_lst = [
             i_leak, i_kl, i_nal, i_kvsi, 
             i_cav, i_nap, i_kca

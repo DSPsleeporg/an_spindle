@@ -282,19 +282,19 @@ class ANmodel:
         params : dictionary
             channel, receptor and pump parameters
         """
-        self.leak.set_g(params['g_leak'])
-        self.nav.set_g(params['g_nav'])
-        self.kvhh.set_g(params['g_kvhh'])
-        self.kva.set_g(params['g_kva'])
-        self.kvsi.set_g(params['g_kvsi'])
-        self.cav.set_g(params['g_cav'])
-        self.kca.set_g(params['g_kca'])
-        self.nap.set_g(params['g_nap'])
-        self.kir.set_g(params['g_kir'])
-        self.ampar.set_g(params['g_ampar'])
-        self.nmdar.set_g(params['g_nmdar'])
-        self.gabar.set_g(params['g_gabar'])
-        self.tau_ca = params['t_ca']
+        self.leak.set_g(float(params['g_leak']))
+        self.nav.set_g(float(params['g_nav']))
+        self.kvhh.set_g(float(params['g_kvhh']))
+        self.kva.set_g(float(params['g_kva']))
+        self.kvsi.set_g(float(params['g_kvsi']))
+        self.cav.set_g(float(params['g_cav']))
+        self.kca.set_g(float(params['g_kca']))
+        self.nap.set_g(float(params['g_nap']))
+        self.kir.set_g(float(params['g_kir']))
+        self.ampar.set_g(float(params['g_ampar']))
+        self.nmdar.set_g(float(params['g_nmdar']))
+        self.gabar.set_g(float(params['g_gabar']))
+        self.tau_ca = float(params['t_ca'])
 
     def set_rand_params(self) -> Dict:
         """ Set random parameters to the channels
@@ -541,12 +541,12 @@ class SANmodel(ANmodel):
         params : dictionary
             channel and pump parameters
         """
-        self.leak.set_g(params["g_leak"])
-        self.kvhh.set_g(params["g_kvhh"])
-        self.cav.set_g(params["g_cav"])
-        self.kca.set_g(params["g_kca"])
-        self.nap.set_g(params["g_nap"])
-        self.tau_ca = params["t_ca"]
+        self.leak.set_g(float(params["g_leak"]))
+        self.kvhh.set_g(float(params["g_kvhh"]))
+        self.cav.set_g(float(params["g_cav"]))
+        self.kca.set_g(float(params["g_kca"]))
+        self.nap.set_g(float(params["g_nap"]))
+        self.tau_ca = float(params["t_ca"])
 
     def set_sws_params(self) -> None:
         """ Set typical parameter that recapitulate SWS firing pattern. 
@@ -783,12 +783,12 @@ class Xmodel(ANmodel):
         for channel_param in list(params.keys())[:-1]:
             channel_name: str = channel_param[2:]
             if self.channel_bool[channel_name]:
-                self.channel[channel_name].set_g(params[channel_param])
+                self.channel[channel_name].set_g(float(params[channel_param]))
             else:
                 raise AttributeError('Model does not match parameter sets')
 
         if 't_ca' == list(params.keys())[-1]:  # or if 't_ca' in params.keys():
-            self.tau_ca = params['t_ca']
+            self.tau_ca = float(params['t_ca'])
         else:
             self.tau_ca = float('inf')
 

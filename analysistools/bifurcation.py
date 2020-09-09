@@ -34,10 +34,12 @@ import analysistools
 
 
 class Analysis:
-    def __init__(self, model: str='AN', wavepattern: str='SWS', 
+    def __init__(self, param: pd.Series, 
+                 model: str='AN', wavepattern: str='SWS', 
                  channel_bool: Optional[Dict]=None, 
                  model_name: Optional[str]=None, 
                  ion: bool=False, concentration: Dict=None) -> None:
+        self.param = param
         self.model = model
         self.wavepattern = wavepattern
         if self.model == 'SAN':
@@ -48,15 +50,16 @@ class Analysis:
                 raise TypeError('Designate channel in argument of X model.')
             self.model_name = model_name
             self.model = anmodel.models.Xmodel(channel_bool, ion, concentration)
+        self.model.set_params(self.param)
 
         self.samp_freq = 10000
         self.l_pad = 0.1
         self.v_pad = 10
 
-    def ode_bifur(self, param: pd.Series, 
-                  channel: str, magnif: float) -> np.ndarray:
-        param[channel] = param[channel] * magnif
-        self.model.set_params(param)
+    def ode_bifur(self, channel: str, magnif: float) -> np.ndarray:
+        p = copy(self.param)
+        p[channel] = p[channel] * magnif
+        self.model.set_params(p)
         s, _ = self.model.run_odeint(samp_freq=self.samp_freq)
         return s
 
@@ -74,12 +77,16 @@ class Analysis:
         vmax = self.s[self.st:self.en, 0].max() + self.v_pad
         l_grid, v_grid = np.meshgrid(np.arange(lmin, lmax, 0.001), 
                                      np.arange(vmin, vmax, 0.1))
-        if self.model == 'SAN':
-            dldt = self.model.kvhh.dndt(v_grid, l_grid)
-        elif self.model == 'X':
-            if self.model_name == 'RAN':
-                dldt = self.model.kvsi.dmdt(v_grid, l_grid)
-        dvdt = self.model.dvdt([v_grid, l_grid, self.s[t, 2]])
+        if self.model_name == 'SAN':
+            dldt = np.array([self.model.kvhh.dndt(v, n) for (v, n) in zip(v_grid.ravel(), l_grid.ravel())]).reshape(l_grid.shape)
+            dvdt = self.model.dvdt([v_grid, l_grid, self.s[t, 2]])
+        elif self.model_name == 'RAN':
+            dldt = self.model.kvsi.dmdt(v_grid, l_grid)
+            dvdt = self.model.dvdt({
+                'v': v_grid, 
+                'm_kvsi': l_grid, 
+                'ca': self.s[t, 2]
+            })
         ct1 = ax.contour(v_grid, l_grid, dldt, 
                          levels=[0], colors='steelblue')
         ct2 = ax.contour(v_grid, l_grid, dvdt, 
@@ -93,7 +100,8 @@ class Analysis:
         return ax
 
     def diagram(self, ca_range: List, start_points: List[float], 
-                ax: plt.axes, legend: bool=False) -> plt.axes :
+                ax: plt.axes, plot: bool=True, stability: bool=True, 
+                legend: bool=False, ) -> plt.axes :
         eq_color = {
             'Stable node' : 'C0', 
             'Unstable node' : 'C1', 
@@ -128,30 +136,36 @@ class Analysis:
             return eq
 
         def _func(v: float, ca: float) -> float:
-            if self.model == 'SAN':
+            if self.model_name == 'SAN':
                 l_inf = self.model.kvhh.n_inf(v=v)
-            elif self.model == 'X':
-                if self.model_name == 'RAN':
-                    l_inf = self.model.kvsi.m_inf(v=v)
-            return self.model.dvdt([v, l_inf, ca])
+                dvdt = self.model.dvdt([v, l_inf, ca])
+            elif self.model_name == 'RAN':
+                l_inf = self.model.kvsi.m_inf(v=v)
+                dvdt = self.model.dvdt({
+                    'v': v, 
+                    'm_kvsi': l_inf, 
+                    'ca': ca
+                })
+            return dvdt
 
         def _jacobian(v, ca):
             x, y = sym.symbols('x, y')
-            dfdx = sym.diff(self.model.dvdt([x, y, ca]), x)
-            dfdy = sym.diff(self.model.dvdt([x, y, ca]), y)
-            if self.model == 'SAN':
+            if self.model_name == 'SAN':
                 l = self.model.kvhh.n_inf(v)
+                dfdx = sym.diff(self.model.dvdt([x, y, ca]), x)
+                dfdy = sym.diff(self.model.dvdt([x, y, ca]), y)
                 dgdx = sym.diff(self.model.kvhh.dndt(v=x, n=y), x)
                 dgdy = sym.diff(self.model.kvhh.dndt(v=x, n=y), y)
-            elif self.model == 'X':
-                if self.model_name == 'RAN':
-                    l = self.model.kvsi.m_inf(v=v)
-                    dgdx = sym.diff(self.model.kvsi.dmdt(v=x, m=y), x)
-                    dgdy = sym.diff(self.model.kvsi.dmdt(v=x, m=y), y)
-            j = np.array([np.float(dfdx.subs([(x, v), (y, l)])), 
-                          np.float(dfdy.subs([(x, v), (y, l)]))], 
-                         [np.float(dgdx.subs([(x, v), (y, l)])), 
-                          np.float(dgdy.subs([(x, v), (y, l)]))])
+            elif self.model_name == 'RAN':
+                l = self.model.kvsi.m_inf(v=v)
+                dfdx = sym.diff(self.model.dvdt({'v': x, 'm_kvsi': y, 'ca': ca}), x)
+                dfdy = sym.diff(self.model.dvdt({'v': x, 'm_kvsi': y, 'ca': ca}), y)
+                dgdx = sym.diff(self.model.kvsi.dmdt(v=x, m=y), x)
+                dgdy = sym.diff(self.model.kvsi.dmdt(v=x, m=y), y)
+            j = np.array([[np.float(dfdx.subs([(x, v), (y, l)])), 
+                           np.float(dfdy.subs([(x, v), (y, l)]))], 
+                          [np.float(dgdx.subs([(x, v), (y, l)])), 
+                           np.float(dgdy.subs([(x, v), (y, l)]))]])
             return j
 
         def _stability(j) -> str:
@@ -186,6 +200,19 @@ class Analysis:
                     st = i
             return seg
 
+        if not plot:
+            eq_lst = []
+            for init in start_points:
+                eq = _numerical_continuation(_func, init, ca_space)
+                eq_lst.append(eq)
+            return eq_lst
+
+        if not stability:
+            for init in start_points:
+                eq = _numerical_continuation(_func, init, ca_space)
+                ax.plot(ca_space, [x for x in eq], color='k')
+            return ax
+
         branches = _get_branches(start_points)
         labels = frozenset()
         for eq, nat in branches:
@@ -196,10 +223,11 @@ class Analysis:
                         color=eq_color[n] if n in eq_color else 'k', 
                         linestyle=eq_linestyle[n] if n in eq_linestyle else '-')
         if legend:
-            ax.legend([mpatches.Patch(color=eq_color[n]) for n in labels if n != 'Unstable node'],
+            ax.legend([mpatches.Patch(color=eq_color[n]) for n in labels],
                       labels,
                       bbox_to_anchor=(1.05, 1), loc='upper left', 
                       borderaxespad=0, fontsize=16)
+        return ax
 
 
 class Property:

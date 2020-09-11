@@ -177,7 +177,7 @@ class Normalization:
         del(s)
 
         als = anmodel.analysis.FreqSpike()
-        burstidx, _, _ = als.get_burstinfo(v, spike='peak')
+        _, burstidx, _, _ = als.get_burstinfo(v, spike='peak')
 
         e = []
         for lst in burstidx:
@@ -211,7 +211,7 @@ class Normalization:
         del(s)
 
         als = anmodel.analysis.FreqSpike()
-        burstidx, _, _ = als.get_burstinfo(v, spike='bottom')
+        _, burstidx, _, _ = als.get_burstinfo(v, spike='bottom')
         
         e = []
         for lst in burstidx:

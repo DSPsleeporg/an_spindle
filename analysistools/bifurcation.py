@@ -19,6 +19,7 @@ from copy import copy
 from datetime import datetime
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -230,6 +231,61 @@ class Analysis:
         return ax
 
 
+class WavePattern:
+    def __init__(self, model: str='AN', wavepattern: str='SWS', 
+                 channel_bool: Optional[Dict]=None, 
+                 model_name: Optional[str]=None, 
+                 ion: bool=False, concentration: Dict=None) -> None:
+        self.model = model
+        self.wavepattern = wavepattern
+        if self.model == 'AN':
+            self.model_name = 'AN'
+            self.model = anmodel.models.ANmodel(ion, concentration)
+        if self.model == 'SAN':
+            self.model_name = 'SAN'
+            self.model = anmodel.models.SANmodel(ion, concentration)
+        if self.model == "X":
+            if channel_bool is None:
+                raise TypeError('Designate channel in argument of X model.')
+            self.model_name = model_name
+            self.model = anmodel.models.Xmodel(channel_bool, ion, concentration)
+
+        self.samp_freq=1000
+        self.wc = anmodel.analysis.WaveCheck()
+    
+    def singleprocess(self, args: List) -> None:
+        now, param, channel = args
+        date: str = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        res_p: Path = p / 'results' / 'bifurcation' / 'wavepattern' / f'{self.model_name}_{self.wavepattern}'
+        res_p.mkdir(parents=True, exist_ok=True)
+        save_p: Path = res_p / f'{date}_{channel}.pickle'
+
+        magnif_arr = np.arange(0, 2.001, 0.001)
+        df = pd.DataFrame(index=magnif_arr, columns=['WavePattern'])
+        for magnif in tqdm(magnif_arr):
+            p = copy(param)
+            p[channel] = p[channel] * magnif
+            self.model.set_params(p)
+            s, _ = self.model.run_odeint(samp_freq=self.samp_freq)
+            wp: anmodel.analysis.WavePattern = self.wc.pattern_spn(s[5000:, 0])
+            df.loc[magnif] = wp
+        with open(save_p, 'wb') as f:
+            pickle.dump(df, f)
+
+    def multi_singleprocess(self, filename) -> None:
+        args = []
+        now = datetime.now()
+        p: Path = Path.cwd().parents[0]
+        data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
+        with open(data_p/filename, 'rb') as f:
+            param = pickle.load(f)
+        for channel in param.index:
+            args.append((now, param, channel))
+        with Pool(processes=len(param.index)) as pool:
+            pool.map(self.singleprocess, args)
+
+
 class Property:
     def __init__(self, channel: str, magnif: float, 
                  model: str='AN', wavepattern: str='SWS', 
@@ -278,7 +334,7 @@ class Property:
         now: datetime = datetime.now()
         date: str = f'{now.year}_{now.month}_{now.day}'
         p: Path = Path.cwd().parents[0]
-        res_p: Path = p / 'results' / 'bifurcation' / f'{self.model_name}_{self.wavepattern}'
+        res_p: Path = p / 'results' / 'bifurcation'  / 'property' / f'{self.model_name}_{self.wavepattern}'
         res_p.mkdir(parents=True, exist_ok=True)
         save_p: Path = res_p / f'{date}_{self.channel}_{self.magnif}.pickle'
 
@@ -306,7 +362,7 @@ class Property:
             else:
                 samp_len = 10 + ((5000+e[6])//10000) * 10
                 self.model.set_params(param)
-                s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
+                s, _ = self.model.run_odeint(samp_freq=self.samp_freq, samp_len=samp_len)
                 v: np.ndarray = s[e[0]:e[6], 0]
                 infolst = self.getinfo(v)
                 df.loc[i] = infolst
@@ -316,13 +372,30 @@ class Property:
 
 if __name__ == '__main__':
     arg: List = sys.argv
-    channel = arg[1]
-    method = arg[2]
-    if method == 'property':
-        magnif = float(arg[3])
-        model = arg[4]
-        wavepattern = arg[5]
-        filename = arg[6]
+    method = arg[1]
+    model = arg[2]
+    wavepattern = arg[3]
+    filename = arg[4]
+    if method == 'wavepattern':
+        if model == 'X':
+            channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
+            model_name = 'RAN'
+            wp = analysistools.bifurcation.WavePattern(
+                model=model, 
+                wavepattern=wavepattern, 
+                channel_bool=channel_bool, 
+                model_name=model_name, 
+            )
+        else:
+            wp = analysistools.bifurcation.WavePattern(
+                model=model, 
+                wavepattern=wavepattern, 
+            )
+        wp.multi_singleprocess(filename)
+
+    elif method == 'property':
+        channel = arg[5]
+        magnif = float(arg[6])
         if model == 'X':
             channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
             model_name = 'RAN'

@@ -283,7 +283,7 @@ class WavePattern:
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
-        for channel in param.columns:
+        for channel in param.index:
             args.append((now, param, channel))
         with Pool(processes=len(param.index)) as pool:
             pool.map(self.singleprocess, args)

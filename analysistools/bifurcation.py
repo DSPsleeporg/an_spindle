@@ -268,7 +268,10 @@ class WavePattern:
             p[channel] = p[channel] * magnif
             self.model.set_params(p)
             s, _ = self.model.run_odeint(samp_freq=self.samp_freq)
-            wp: anmodel.analysis.WavePattern = self.wc.pattern_spn(s[5000:, 0])
+            if self.wavepattern == 'SWS':
+                wp: anmodel.analysis.WavePattern = self.wc.pattern(s[5000:, 0])
+            elif self.wavepattern == 'SPN':
+                wp: anmodel.analysis.WavePattern = self.wc.pattern_spn(s[5000:, 0])
             df.loc[magnif] = wp
         with open(save_p, 'wb') as f:
             pickle.dump(df, f)
@@ -280,7 +283,7 @@ class WavePattern:
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
-        for channel in param.index:
+        for channel in param.columns:
             args.append((now, param, channel))
         with Pool(processes=len(param.index)) as pool:
             pool.map(self.singleprocess, args)

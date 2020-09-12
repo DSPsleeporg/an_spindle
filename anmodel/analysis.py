@@ -128,7 +128,7 @@ class WaveCheck:
         nummax: int = spw.tolist().index(maxamp)
         maxfre: float = f[nummax]
         numfire: int = self.freq_spike.count_spike(v)
-        ave_revspike_per_burst: float = self.freq_spike.get_burstinfo(v=v, spike='bottom')[1]
+        ave_revspike_per_burst: float = self.freq_spike.get_burstinfo(v=v, spike='bottom')[2]
         v_sq: np.ndarray = self.freq_spike.square_wave(v=v, spike='bottom')
         v_group: pd.DataFrame = pd.DataFrame([v, v_sq]).T.groupby(1)
         if np.any(v_sq==0) and np.any(v_sq==1):

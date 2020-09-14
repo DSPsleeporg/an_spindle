@@ -14,6 +14,13 @@ import os
 import sys
 sys.path.append('../')
 sys.path.append('../anmodel')
+"""
+LIMIT THE NUMBER OF THREADS!
+change local env variables BEFORE importing numpy
+"""
+os.environ["OMP_NUM_THREADS"] = "1"  # 2nd likely
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"  # most likely
 
 from copy import copy
 from datetime import datetime

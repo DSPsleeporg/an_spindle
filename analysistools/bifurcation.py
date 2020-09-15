@@ -286,7 +286,7 @@ class WavePattern:
                 g_nal = self.model.leak.gnal
                 g = copy(g_nal)
                 g = g * magnif
-                self.model.leak.set_gnal(g)
+                self.model.leak.set_gna(g)
 
             s, _ = self.model.run_odeint(samp_freq=self.samp_freq)
             if self.wavepattern == 'SWS':
@@ -362,7 +362,7 @@ class Simple(WavePattern):
                 param = df.iloc[i, :]
                 self.model.set_params(param)
                 g_nal = self.model.leak.gnal
-                self.model.leak.set_gnal(g_nal/1000)
+                self.model.leak.set_gna(g_nal/1000)
                 wp = _judge()
                 res_df.iloc[i, 0] = wp
         with open(save_p, 'wb') as f:

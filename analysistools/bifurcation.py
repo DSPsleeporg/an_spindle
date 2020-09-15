@@ -279,11 +279,13 @@ class WavePattern:
                 self.model.set_params(param)
                 g_kl = self.model.leak.gkl
                 g = copy(g_kl)
+                g = g * magnif
                 self.model.leak.set_gk(g)
             elif channel == 'g_naleak':
                 self.model.set_params(param)
                 g_nal = self.model.leak.gnal
                 g = copy(g_nal)
+                g = g * magnif
                 self.model.leak.set_gnal(g)
 
             s, _ = self.model.run_odeint(samp_freq=self.samp_freq)
@@ -309,6 +311,71 @@ class WavePattern:
         for channel in ch_lst:
             args.append((now, param, channel))
         with Pool(processes=len(param.index)) as pool:
+            pool.map(self.singleprocess, args)
+
+
+class Simple:
+    def __init__(self, model: str='AN', wavepattern: str='SWS', 
+                 channel_bool: Optional[Dict]=None, 
+                 model_name: Optional[str]=None, 
+                 ion: bool=False, concentration: Dict=None) -> None:
+        self.model = model
+        self.wavepattern = wavepattern
+        if self.model == 'AN':
+            self.model_name = 'AN'
+            self.model = anmodel.models.ANmodel(ion, concentration)
+        if self.model == 'SAN':
+            self.model_name = 'SAN'
+            self.model = anmodel.models.SANmodel(ion, concentration)
+        if self.model == "X":
+            if channel_bool is None:
+                raise TypeError('Designate channel in argument of X model.')
+            self.model_name = model_name
+            self.model = anmodel.models.Xmodel(channel_bool, ion, concentration)
+
+        self.samp_freq=1000
+        self.wc = anmodel.analysis.WaveCheck()
+
+    def singleprocess(self, args: List) -> None:
+        now, df, channel = args
+        date: str = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        res_p: Path = p / 'results' / 'bifurcation' / 'simple' / f'{self.model_name}_{self.wavepattern}'
+        res_p.mkdir(parents=True, exist_ok=True)
+        save_p: Path = res_p / f'{date}_{channel}.pickle'
+        res_df = pd.DataFrame(index=range(len(df)), columns=[channel])
+        if channel != 'g_kleak' and channel != 'g_naleak':
+            for i in range(len(df)):
+                param = df.iloc[i, :]
+                if channel != 't_ca':
+                    param[channel] = param[channel] / 1000
+                else:
+                    param[channel] = param[channel] * 1000
+            self.model.set_params(p)
+        elif channel == 'g_kleak':
+            self.model.set_params(param)
+            g_kl = self.model.leak.gkl
+            self.model.leak.set_gk(g_kl/1000)
+        elif channel == 'g_naleak':
+            self.model.set_params(param)
+            g_nal = self.model.leak.gnal
+            self.model.leak.set_gnal(g_nal/1000)
+
+
+    def multi_singleprocess(self, filename) -> None:
+        args = []
+        now = datetime.now()
+        p: Path = Path.cwd().parents[0]
+        data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
+        with open(data_p/filename, 'rb') as f:
+            df = pickle.load(f)
+        ch_lst = list(df.columns)
+        if 'g_leak' in ch_lst:
+            ch_lst.remove('g_leak')
+            ch_lst.extend(['g_kleak', 'g_naleak'])
+        for channel in ch_lst:
+            args.append((now, df, channel))
+        with Pool(processes=len(df.index)) as pool:
             pool.map(self.singleprocess, args)
 
 
@@ -365,11 +432,11 @@ class Property:
         save_p: Path = res_p / f'{date}_{self.channel}_{self.magnif}.pickle'
 
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
-        time_p: Path = p / 'results' / 'normalization_mp_ca' 
+        time_p: Path = p / 'results' / 'normalization_mp_ca'
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)
         with open(time_p/f'{self.wavepattern}_{self.model_name}_time.pickle', 'rb') as f:
-            time_df = pickle.load(f)  
+            time_df = pickle.load(f)
 
         data: List = ['nspike', 
                       'average_spike_per_burst', 

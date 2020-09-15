@@ -344,6 +344,15 @@ class Simple:
         res_p.mkdir(parents=True, exist_ok=True)
         save_p: Path = res_p / f'{date}_{channel}.pickle'
         res_df = pd.DataFrame(index=range(len(df)), columns=[channel])
+
+        def _judge() -> anmodel.analysis.WavePattern:
+            s, _ = self.model.run_odeint(samp_freq=self.samp_freq)
+            if self.wavepattern == 'SWS':
+                wp: anmodel.analysis.WavePattern = self.wc.pattern(s[5000:, 0])
+            elif self.wavepattern == 'SPN':
+                wp: anmodel.analysis.WavePattern = self.wc.pattern_spn(s[5000:, 0])
+            return wp
+
         if channel != 'g_kleak' and channel != 'g_naleak':
             for i in range(len(df)):
                 param = df.iloc[i, :]
@@ -351,16 +360,27 @@ class Simple:
                     param[channel] = param[channel] / 1000
                 else:
                     param[channel] = param[channel] * 1000
-            self.model.set_params(p)
+                self.model.set_params(param)
+                wp = _judge()
+                res_df.iloc[i, 0] = wp
         elif channel == 'g_kleak':
-            self.model.set_params(param)
-            g_kl = self.model.leak.gkl
-            self.model.leak.set_gk(g_kl/1000)
+            for i in range(len(df)):
+                param = df.iloc[i, :]
+                self.model.set_params(param)
+                g_kl = self.model.leak.gkl
+                self.model.leak.set_gk(g_kl/1000)
+                wp = _judge()
+                res_df.iloc[i, 0] = wp
         elif channel == 'g_naleak':
-            self.model.set_params(param)
-            g_nal = self.model.leak.gnal
-            self.model.leak.set_gnal(g_nal/1000)
-
+            for i in range(len(df)):
+                param = df.iloc[i, :]
+                self.model.set_params(param)
+                g_nal = self.model.leak.gnal
+                self.model.leak.set_gnal(g_nal/1000)
+                wp = _judge()
+                res_df.iloc[i, 0] = wp
+        with open(save_p, 'wb') as f:
+            pickle.dump(res_df, f)
 
     def multi_singleprocess(self, filename) -> None:
         args = []

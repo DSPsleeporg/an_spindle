@@ -310,7 +310,7 @@ class WavePattern:
             ch_lst.extend(['g_kleak', 'g_naleak'])
         for channel in ch_lst:
             args.append((now, param, channel))
-        with Pool(processes=len(param.index)) as pool:
+        with Pool(processes=len(ch_lst)) as pool:
             pool.map(self.singleprocess, args)
 
 
@@ -340,7 +340,7 @@ class Simple(WavePattern):
             return wp
 
         if channel != 'g_kleak' and channel != 'g_naleak':
-            for i in range(len(df)):
+            for i in tqdm(range(len(df))):
                 param = df.iloc[i, :]
                 if channel != 't_ca':
                     param[channel] = param[channel] / 1000
@@ -350,7 +350,7 @@ class Simple(WavePattern):
                 wp = _judge()
                 res_df.iloc[i, 0] = wp
         elif channel == 'g_kleak':
-            for i in range(len(df)):
+            for i in tqdm(range(len(df))):
                 param = df.iloc[i, :]
                 self.model.set_params(param)
                 g_kl = self.model.leak.gkl
@@ -358,7 +358,7 @@ class Simple(WavePattern):
                 wp = _judge()
                 res_df.iloc[i, 0] = wp
         elif channel == 'g_naleak':
-            for i in range(len(df)):
+            for i in tqdm(range(len(df))):
                 param = df.iloc[i, :]
                 self.model.set_params(param)
                 g_nal = self.model.leak.gnal
@@ -381,7 +381,7 @@ class Simple(WavePattern):
             ch_lst.extend(['g_kleak', 'g_naleak'])
         for channel in ch_lst:
             args.append((now, df, channel))
-        with Pool(processes=len(df.index)) as pool:
+        with Pool(processes=len(ch_lst)) as pool:
             pool.map(self.singleprocess, args)
 
 

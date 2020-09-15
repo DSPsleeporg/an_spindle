@@ -314,27 +314,13 @@ class WavePattern:
             pool.map(self.singleprocess, args)
 
 
-class Simple:
+class Simple(WavePattern):
     def __init__(self, model: str='AN', wavepattern: str='SWS', 
                  channel_bool: Optional[Dict]=None, 
                  model_name: Optional[str]=None, 
                  ion: bool=False, concentration: Dict=None) -> None:
-        self.model = model
-        self.wavepattern = wavepattern
-        if self.model == 'AN':
-            self.model_name = 'AN'
-            self.model = anmodel.models.ANmodel(ion, concentration)
-        if self.model == 'SAN':
-            self.model_name = 'SAN'
-            self.model = anmodel.models.SANmodel(ion, concentration)
-        if self.model == "X":
-            if channel_bool is None:
-                raise TypeError('Designate channel in argument of X model.')
-            self.model_name = model_name
-            self.model = anmodel.models.Xmodel(channel_bool, ion, concentration)
-
-        self.samp_freq=1000
-        self.wc = anmodel.analysis.WaveCheck()
+        super().__init__(model, wavepattern, channel_bool, model_name, 
+                         ion, concentration)
 
     def singleprocess(self, args: List) -> None:
         now, df, channel = args
@@ -505,6 +491,23 @@ if __name__ == '__main__':
                 wavepattern=wavepattern, 
             )
         wp.multi_singleprocess(filename)
+
+    elif method == 'simple':
+        if model == 'X':
+            channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
+            model_name = 'RAN'
+            sm = analysistools.bifurcation.Simple(
+                model=model, 
+                wavepattern=wavepattern, 
+                channel_bool=channel_bool, 
+                model_name=model_name, 
+            )
+        else:
+            sm = analysistools.bifurcation.Simple(
+                model=model, 
+                wavepattern=wavepattern, 
+            )
+        sm.multi_singleprocess(filename)
 
     elif method == 'property':
         channel = arg[5]

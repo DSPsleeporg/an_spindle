@@ -271,9 +271,21 @@ class WavePattern:
         magnif_arr = np.arange(0, 2.001, 0.001)
         df = pd.DataFrame(index=magnif_arr, columns=['WavePattern'])
         for magnif in tqdm(magnif_arr):
-            p = copy(param)
-            p[channel] = p[channel] * magnif
-            self.model.set_params(p)
+            if channel != 'g_kleak' and channel != 'g_naleak':
+                p = copy(param)
+                p[channel] = p[channel] * magnif
+                self.model.set_params(p)
+            elif channel == 'g_kleak':
+                self.model.set_params(param)
+                g_kl = self.model.leak.gkl
+                g = copy(g_kl)
+                self.model.leak.set_gk(g)
+            elif channel == 'g_naleak':
+                self.model.set_params(param)
+                g_nal = self.model.leak.gnal
+                g = copy(g_nal)
+                self.model.leak.set_gnal(g)
+
             s, _ = self.model.run_odeint(samp_freq=self.samp_freq)
             if self.wavepattern == 'SWS':
                 wp: anmodel.analysis.WavePattern = self.wc.pattern(s[5000:, 0])
@@ -290,7 +302,11 @@ class WavePattern:
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
-        for channel in param.index:
+        ch_lst = list(param.index)
+        if 'g_leak' in ch_lst:
+            ch_lst.remove('g_leak')
+            ch_lst.extend(['g_kleak', 'g_naleak'])
+        for channel in ch_lst:
             args.append((now, param, channel))
         with Pool(processes=len(param.index)) as pool:
             pool.map(self.singleprocess, args)

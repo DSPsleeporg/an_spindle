@@ -289,10 +289,13 @@ class RandomSearch():
                 pass
             
             v: np.ndarray = s[self.samp_freq*self.samp_len//2:, 0]
-            if self.pattern != 'SPN':
-                pattern: analysis.WavePattern = self.wave_check.pattern(v=v)
-            else:
-                pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v)
+            # if you want to detect the SWS firing pattern in the method that 
+            # Tatsuki et al. or Yoshida et al. applied, you should use the code below.
+            # if self.pattern != 'SPN':
+            #     pattern: analysis.WavePattern = self.wave_check.pattern(v=v)
+            # else:
+            #     pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v)
+            pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v)
             
             if pattern.name == self.pattern:
                 print('Hit!')

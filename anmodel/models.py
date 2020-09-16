@@ -930,7 +930,7 @@ class Xmodel(ANmodel):
         if self.channel_bool['cav']:
             i_cav: float = self.cav.i(args['v'])
         else:
-            self.I_cav = 0
+            i_cav = 0
 
         if self.channel_bool['nmdar']:
             i_nmdar: float = self.nmdar.i(args['v'], s=args['s_nmdar'])

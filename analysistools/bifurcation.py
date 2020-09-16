@@ -289,10 +289,17 @@ class WavePattern:
                 self.model.leak.set_gna(g)
 
             s, _ = self.model.run_odeint(samp_freq=self.samp_freq)
+            # if you want to detect the SWS firing pattern in the method that 
+            # Tatsuki et al. or Yoshida et al. applied, you should use the code below.
+            # if self.wavepattern == 'SWS':
+            #     wp: anmodel.analysis.WavePattern = self.wc.pattern(s[5000:, 0])
+            # elif self.wavepattern == 'SPN':
+            #     wp: anmodel.analysis.WavePattern = self.wc.pattern_spn(s[5000:, 0])
             if self.wavepattern == 'SWS':
-                wp: anmodel.analysis.WavePattern = self.wc.pattern(s[5000:, 0])
+                spike = 'peak'
             elif self.wavepattern == 'SPN':
-                wp: anmodel.analysis.WavePattern = self.wc.pattern_spn(s[5000:, 0])
+                spike = 'bottom'
+            wp: anmodel.analysis.WavePattern = self.wc.pattern_spn(s[5000:, 0], spike)
             df.loc[magnif] = wp
         with open(save_p, 'wb') as f:
             pickle.dump(df, f)
@@ -333,10 +340,17 @@ class Simple(WavePattern):
 
         def _judge() -> anmodel.analysis.WavePattern:
             s, _ = self.model.run_odeint(samp_freq=self.samp_freq)
+            # if you want to detect the SWS firing pattern in the method that 
+            # Tatsuki et al. or Yoshida et al. applied, you should use the code below.
+            # if self.wavepattern == 'SWS':
+            #     wp: anmodel.analysis.WavePattern = self.wc.pattern(s[5000:, 0])
+            # elif self.wavepattern == 'SPN':
+            #     wp: anmodel.analysis.WavePattern = self.wc.pattern_spn(s[5000:, 0])
             if self.wavepattern == 'SWS':
-                wp: anmodel.analysis.WavePattern = self.wc.pattern(s[5000:, 0])
+                spike = 'peak'
             elif self.wavepattern == 'SPN':
-                wp: anmodel.analysis.WavePattern = self.wc.pattern_spn(s[5000:, 0])
+                spike = 'bottom'
+            wp: anmodel.analysis.WavePattern = self.wc.pattern_spn(s[5000:, 0], spike)
             return wp
 
         if channel != 'g_kleak' and channel != 'g_naleak':

@@ -75,12 +75,13 @@ class Read:
     
     def _setcolname(self, df: pd.DataFrame, 
                     model: str, channel_bool: Optional[List]=None):
-        colname: List = [
-            'g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
-            'g_cav', 'g_kca', 'g_nap', 'g_kir', 
-            'g_ampar', 'g_nmdar', 'g_gabar', 't_ca',
-        ]
-        if model == 'SAN':
+        if model == 'AN':
+            colname: List = [
+                'g_leak', 'g_nav', 'g_kvhh', 'g_kva', 'g_kvsi', 
+                'g_cav', 'g_kca', 'g_nap', 'g_kir', 
+                'g_ampar', 'g_nmdar', 'g_gabar', 't_ca',
+            ]
+        elif model == 'SAN':
             colname: List = [
                 'g_leak', 'g_kvhh', 'g_cav', 'g_kca', 'g_nap', 't_ca', 
             ]

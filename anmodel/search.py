@@ -34,6 +34,7 @@ import pandas as pd
 from pathlib import Path
 import pickle
 from time import time
+from tqdm import tqdm
 from typing import Dict, List, Optional
 import warnings
 warnings.filterwarnings('ignore')
@@ -132,31 +133,37 @@ class NormalSearch:
         param_df: pd.DataFrame = pd.DataFrame([])
         nhit: int = 0
         nfail: int = 0
-        for i in range(len(df)):
-            params: Dict = df.to_dict(orient='index')[i]
-            self.model.set_params(params=params)
-            s: np.ndarray
-            info: Dict
-            s, info  = self.model.run_odeint()
+        if self.pattern == 'SWS':
+            spike = 'peak'
+        elif self.pattern == 'SPN':
+            spike = 'bottom'
+        else:
+            spike = 'peak'
+
+        for i in tqdm(range(len(df))):
+            param = df.iloc[i, :]
+            self.model.set_params(params=param)
+            s, info  = self.model.run_odeint(samp_freq=self.samp_freq)
 
             if info['message'] == 'Excess work done on this call (perhaps wrong Dfun type).':
                 pass
             
             v: np.ndarray = s[self.samp_freq*self.samp_len//2:, 0]
-            if self.pattern != 'SPN':
-                pattern: analysis.WavePattern = self.wave_check.pattern(v=v)
-            else:
-                pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v)
+            # if you want to detect the SWS firing pattern in the method that 
+            # Tatsuki et al. or Yoshida et al. applied, you should use the code below.
+            # if self.pattern != 'SPN':
+            #     pattern: analysis.WavePattern = self.wave_check.pattern(v=v)
+            # else:
+            #     pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v)
+            pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v, spike=spike)
             
-            print(pattern.name)
             if pattern.name == self.pattern:
-                print('Hit!')
                 nhit += 1
-                param_df = pd.concat([param_df, params])
+                param_df = pd.concat([param_df, param])
             else:
                 nfail += 1
         
-        print(f'Among {len(df)} parameter sets, {nhit} parameter sets hit.')
+        print(f'Among {len(df)} parameter sets, {nhit} hit.')
         with open(str(save_p), "wb") as f:
              pickle.dump(param_df, f)
 
@@ -276,14 +283,18 @@ class RandomSearch():
         nfail: int = 0
         st: float = time()  # start time : updated every 1 hour
         np.random.seed(rand_seed)
+        if self.pattern == 'SWS':
+            spike = 'peak'
+        elif self.pattern == 'SPN':
+            spike = 'bottom'
+        else:
+            spike = 'peak'
 
         while True:
             niter += 1
             new_params: pd.DataFrame = pd.DataFrame.from_dict(
                 self.model.set_rand_params(), orient='index').T
-            s: np.ndarray
-            info: Dict
-            s, info  = self.model.run_odeint()
+            s, info  = self.model.run_odeint(samp_freq=self.samp_freq)
             
             if info['message'] == 'Excess work done on this call (perhaps wrong Dfun type).':
                 pass
@@ -295,7 +306,7 @@ class RandomSearch():
             #     pattern: analysis.WavePattern = self.wave_check.pattern(v=v)
             # else:
             #     pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v)
-            pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v)
+            pattern: analysis.WavePattern = self.wave_check.pattern_spn(v=v, spike=spike)
             
             if pattern.name == self.pattern:
                 print('Hit!')
@@ -364,7 +375,6 @@ if __name__ == '__main__':
         )
         filename: str = arg[3]
         df: pd.DataFrame = read.paramdf(filename=filename)
-        df = read._setcolname(df=df, model=str(idf.loc['model'][1]), channel_bool=channel_bool)
         ns.singleprocess(df=df, filename=filename)
 
     elif search_method == 'rs':  # Random Search

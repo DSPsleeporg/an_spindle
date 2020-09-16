@@ -542,12 +542,12 @@ class SANmodel(ANmodel):
         params : dictionary
             channel and pump parameters
         """
-        self.leak.set_g(float(params["g_leak"]))
-        self.kvhh.set_g(float(params["g_kvhh"]))
-        self.cav.set_g(float(params["g_cav"]))
-        self.kca.set_g(float(params["g_kca"]))
-        self.nap.set_g(float(params["g_nap"]))
-        self.tau_ca = float(params["t_ca"])
+        self.leak.set_g(float(params['g_leak']))
+        self.kvhh.set_g(float(params['g_kvhh']))
+        self.cav.set_g(float(params['g_cav']))
+        self.kca.set_g(float(params['g_kca']))
+        self.nap.set_g(float(params['g_nap']))
+        self.tau_ca = float(params['t_ca'])
         self.leak.set_div()
 
     def set_sws_params(self) -> None:

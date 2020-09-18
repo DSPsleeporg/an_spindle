@@ -321,6 +321,12 @@ if __name__ == '__main__':
         norm = analysistools.norm_fre_mp.Normalization(
             model, wavepattern, channel_bool, model_name
             )
+    elif model == 'Model 2':
+        channel_bool = [1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1]
+        model_name = 'Model 2'
+        norm = analysistools.norm_fre_mp.Normalization(
+            model, wavepattern, channel_bool, model_name
+            )
     else:
         norm = analysistools.norm_fre_mp.Normalization(model, wavepattern)
     

@@ -290,7 +290,8 @@ class Normalization:
                 for j in range(len(e)-1):
                     tlst = np.linspace(e[j], e[j+1], 9, dtype=int)
                     for k in range(len(tlst)-1):
-                        v_norm.append(v[tlst[k]:tlst[k+1]].var(ddof=0))
+                        # v_norm.append(v[tlst[k]:tlst[k+1]].var(ddof=0))
+                        v_norm.append(v[tlst[k]:tlst[k+1]].std(ddof=0))
                         ca_norm.append(ca[tlst[k]:tlst[k+1]].mean())
                 hm_df.iloc[i, :] = v_norm
                 hm_ca_df.iloc[i, :] = ca_norm

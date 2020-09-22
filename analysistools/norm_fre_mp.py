@@ -253,6 +253,7 @@ class Normalization:
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_{self.model_name}_time.pickle'
+        res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             df = pickle.load(f)
 
@@ -338,8 +339,9 @@ class Normalization:
         """
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
-        filename: str = f'{self.wavepattern}_{self.model_name}_{channel}_time.pickle'
-        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation' / filename
+        resname: str = f'{self.wavepattern}_{self.model_name}_{channel}_time.pickle'
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation' / resname
+        res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
 

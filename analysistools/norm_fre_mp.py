@@ -383,11 +383,11 @@ if __name__ == '__main__':
     wavepattern = arg[2]
     filename = arg[3]
     method = arg[4]
-    if model == 'X':
+    if model == 'RAN':
         channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
         model_name = 'RAN'
         norm = analysistools.norm_fre_mp.Normalization(
-            model, wavepattern, channel_bool, model_name
+            'X', wavepattern, channel_bool, model_name
             )
     elif model == 'Model2':
         channel_bool = [1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1]

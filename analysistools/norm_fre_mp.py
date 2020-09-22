@@ -224,6 +224,11 @@ class Normalization:
             the index (time (ms)) of the 1st~6th ends of burst firing
         """
         self.model.set_params(param)
+        if gl_name == 'k':
+            self.model.leak.set_gk(gl)
+        elif gl_name == 'na':
+            self.model.leak.set_gna(gl)
+            
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
         del(s)

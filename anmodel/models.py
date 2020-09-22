@@ -295,7 +295,7 @@ class ANmodel:
         self.nmdar.set_g(float(params['g_nmdar']))
         self.gabar.set_g(float(params['g_gabar']))
         self.tau_ca = float(params['t_ca'])
-        self.leak.set_div()
+        # self.leak.set_div()
 
     def set_rand_params(self) -> Dict:
         """ Set random parameters to the channels
@@ -548,7 +548,7 @@ class SANmodel(ANmodel):
         self.kca.set_g(float(params['g_kca']))
         self.nap.set_g(float(params['g_nap']))
         self.tau_ca = float(params['t_ca'])
-        self.leak.set_div()
+        # self.leak.set_div()
 
     def set_sws_params(self) -> None:
         """ Set typical parameter that recapitulate SWS firing pattern. 
@@ -793,7 +793,7 @@ class Xmodel(ANmodel):
             self.tau_ca = float(params['t_ca'])
         else:
             self.tau_ca = float('inf')
-        self.leak.set_div()
+        # self.leak.set_div()
 
     def get_params(self) -> Dict:
         """ Get current channel conductances.

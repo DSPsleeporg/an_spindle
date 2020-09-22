@@ -276,12 +276,14 @@ class WavePattern:
                 p[channel] = p[channel] * magnif
                 self.model.set_params(p)
             elif channel == 'g_kleak':
+                self.model.leak.set_div()
                 self.model.set_params(param)
                 g_kl = self.model.leak.gkl
                 g = copy(g_kl)
                 g = g * magnif
                 self.model.leak.set_gk(g)
             elif channel == 'g_naleak':
+                self.model.leak.set_div()
                 self.model.set_params(param)
                 g_nal = self.model.leak.gnal
                 g = copy(g_nal)
@@ -364,6 +366,7 @@ class Simple(WavePattern):
                 wp = _judge()
                 res_df.iloc[i, 0] = wp
         elif channel == 'g_kleak':
+            self.model.leak.set_div()
             for i in tqdm(range(len(df))):
                 param = df.iloc[i, :]
                 self.model.set_params(param)
@@ -372,6 +375,7 @@ class Simple(WavePattern):
                 wp = _judge()
                 res_df.iloc[i, 0] = wp
         elif channel == 'g_naleak':
+            self.model.leak.set_div()
             for i in tqdm(range(len(df))):
                 param = df.iloc[i, :]
                 self.model.set_params(param)

@@ -313,8 +313,8 @@ class Normalization:
                 for j in range(len(e)-1):
                     tlst = np.linspace(e[j], e[j+1], 9, dtype=int)
                     for k in range(len(tlst)-1):
-                        # v_norm.append(v[tlst[k]:tlst[k+1]].var(ddof=0))
-                        v_norm.append(v[tlst[k]:tlst[k+1]].std(ddof=0))
+                        v_norm.append(v[tlst[k]:tlst[k+1]].var(ddof=0))
+                        # v_norm.append(v[tlst[k]:tlst[k+1]].std(ddof=0))
                         ca_norm.append(ca[tlst[k]:tlst[k+1]].mean())
                 hm_df.iloc[i, :] = v_norm
                 hm_ca_df.iloc[i, :] = ca_norm
@@ -348,24 +348,24 @@ class Normalization:
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
 
-        res_df = pd.DataFrame([], columns=range(7), index=range(201))
+        res_df = pd.DataFrame([], columns=range(7), index=np.arange(900, 1101))
         for i in tqdm(res_df.index):
             if channel != 'g_kleak' and channel != 'g_naleak':
                 p = copy(param)
-                p[channel] = p[channel] * i / 100
+                p[channel] = p[channel] * i / 1000
                 g = None
                 gl_name = None
             elif channel == 'g_kleak':
                 self.model.leak.set_div()
                 g_kl = self.model.leak.gkl
                 g = copy(g_kl)
-                g = g * i / 100
+                g = g * i / 1000
                 gl_name = 'k'
             elif channel == 'g_naleak':
                 self.model.leak.set_div()
                 g_nal = self.model.leak.gnal
                 g = copy(g_nal)
-                g = g * i / 100
+                g = g * i / 1000
                 gl_name = 'na'
 
             if self.wavepattern == 'SWS':

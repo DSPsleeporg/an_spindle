@@ -402,3 +402,6 @@ if __name__ == '__main__':
         norm.time(filename)
     elif method == 'mp_ca':
         norm.mp_ca(filename)
+    elif method == 'time_bifurcation':
+        channel = arg[5]
+        norm.time_bifurcation(filename, channel)

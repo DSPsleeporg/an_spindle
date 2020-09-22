@@ -116,6 +116,7 @@ class Leak(Base):
     """
     def __init__(self, g: Optional[float]=None, e: float=params.vL) -> None:
         super().__init__(g, e)
+        self.div = False
 
     def i(self, v:float) -> float:
         """ Calculate current that flows through the channel.
@@ -134,7 +135,10 @@ class Leak(Base):
         float
             current that flows through the channel
         """
-        return self.g * (v - self.e)
+        if not self.div:
+            return self.g * (v - self.e)
+        else:
+            return self.inal(v) + self.ikl(v)
 
     def set_div(self, vnal: float=params.vNaL, vkl: float=params.vK) -> None:
         """ Setting about deviding leak channel into Na leak and K leak.
@@ -152,6 +156,7 @@ class Leak(Base):
         vnal : float
             equilibrium potential for leak sodium channel
         """
+        self.div = True
         self.vnal = vnal
         self.vkl = vkl
         self.gnal = self.g * (self.e - self.vkl) / (self.vnal - self.vkl)
@@ -215,9 +220,6 @@ class Leak(Base):
         """
         return self.gnal * (v - self.vnal)
     
-    def i_div(self, v: float) -> float:
-        return self.inal(v) + self.ikl(v)
-
 
 class NavHH(Base):
     """ Hodgkin-Huxley type volatage gated sodium channel.

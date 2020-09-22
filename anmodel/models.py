@@ -361,7 +361,7 @@ class ANmodel:
         """
         v, h_nav, n_kvhh, h_kva, m_kvsi, s_ampar, _, s_nmdar, s_gabar, ca = args
         return ((-10.0*self.params.area 
-                * (self.leak.i_div(v)
+                * (self.leak.i(v)
                 + self.nav.i(v, h=h_nav) 
                 + self.kvhh.i(v, n=n_kvhh)
                 + self.kva.i(v, h=h_kva)
@@ -597,7 +597,7 @@ class SANmodel(ANmodel):
                 + self.cav.i(v) 
                 + self.kca.i(v, ca=ca) 
                 + self.nap.i(v) 
-                + self.leak.i_div(v))) 
+                + self.leak.i(v))) 
                 / (10.0*self.params.cm*self.params.area))
 
     def dCadt(self, args: List[float]) -> float:
@@ -833,7 +833,7 @@ class Xmodel(ANmodel):
             dv/dt for given parameters
         """
         if self.channel_bool['leak']:
-            i_leak: float = self.leak.i_div(args['v'])
+            i_leak: float = self.leak.i(args['v'])
         else:
             i_leak: float = 0.
         

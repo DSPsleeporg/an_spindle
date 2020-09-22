@@ -369,9 +369,9 @@ class Normalization:
                 gl_name = 'na'
 
             if self.wavepattern == 'SWS':
-                res_df.iloc[i, :] = self.norm_sws(p, g, gl_name)
+                res_df.loc[i, :] = self.norm_sws(p, g, gl_name)
             elif self.wavepattern == 'SPN':
-                res_df.iloc[i, :] = self.norm_spn(p, g, gl_name)
+                res_df.loc[i, :] = self.norm_spn(p, g, gl_name)
             else:
                 raise NameError(f'Wavepattern {self.wavepattern} is unvalid.')
 

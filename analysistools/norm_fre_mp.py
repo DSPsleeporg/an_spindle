@@ -332,7 +332,7 @@ class Normalization:
         sns.heatmap(hm_ca_df.values.tolist(), cmap='jet')
         plt.savefig(res_p/f'{self.wavepattern}_{self.model_name}_ca_hm.png')
 
-    def time_bifurcation(self, filename: str, channel: str) -> None:
+    def time_bifurcation_rep(self, filename: str, channel: str) -> None:
         """ Calculate time points for 1st~6th burst firing for 
         the representative parameter set through bifurcation.
 
@@ -344,7 +344,7 @@ class Normalization:
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         resname: str = f'{self.wavepattern}_{self.model_name}_{channel}_time.pickle'
-        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation' / resname
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation_rep' / resname
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
 
@@ -383,6 +383,58 @@ class Normalization:
         with open(res_p, 'wb') as f:
             pickle.dump(res_df, f)
 
+    def time_bifurcation_all(self, filename: str, 
+                             channel: str, magnif: float) -> None:
+        """ Calculate time points for 1st~6th burst firing for 
+        the representative parameter set through bifurcation.
+
+        Parameters
+        ----------
+        filename : str
+            the name of file in which parameter sets are contained
+        """
+        p: Path = Path.cwd().parents[0]
+        data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
+        resname: str = f'{self.wavepattern}_{self.model_name}_{channel}_{magnif}_time.pickle'
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation_all' / resname
+        with open(data_p/filename, 'rb') as f:
+            df = pickle.load(f)
+
+        res_df = pd.DataFrame([], columns=range(7), index=range(len(df)))
+        for i in tqdm(range(len(df))):
+            param = df.iloc[i, :]
+            if channel != 'g_kleak' and channel != 'g_naleak':
+                p = copy(param)
+                p[channel] = p[channel] * i / 1000
+                g = None
+                gl_name = None
+            elif channel == 'g_kleak':
+                self.model.leak.set_div()
+                g_kl = self.model.leak.gkl
+                g = copy(g_kl)
+                g = g * i / 1000
+                gl_name = 'k'
+            elif channel == 'g_naleak':
+                self.model.leak.set_div()
+                g_nal = self.model.leak.gnal
+                g = copy(g_nal)
+                g = g * i / 1000
+                gl_name = 'na'
+
+            if self.wavepattern == 'SWS':
+                res_df.loc[i, :] = self.norm_sws(p, g, gl_name)
+            elif self.wavepattern == 'SPN':
+                res_df.loc[i, :] = self.norm_spn(p, g, gl_name)
+            else:
+                raise NameError(f'Wavepattern {self.wavepattern} is unvalid.')
+
+            if i%10 == 0:
+                with open(res_p, 'wb') as f:
+                    pickle.dump(res_df, f)
+                print(f'Now i={i}, and pickled')
+        with open(res_p, 'wb') as f:
+            pickle.dump(res_df, f)
+
 
 if __name__ == '__main__':
     arg: List = sys.argv
@@ -409,6 +461,6 @@ if __name__ == '__main__':
         norm.time(filename)
     elif method == 'mp_ca':
         norm.mp_ca(filename)
-    elif method == 'time_bifurcation':
+    elif method == 'time_bifurcation_rep':
         channel = arg[5]
-        norm.time_bifurcation(filename, channel)
+        norm.time_bifurcation_rep(filename, channel)

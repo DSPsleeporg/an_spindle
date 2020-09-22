@@ -464,3 +464,7 @@ if __name__ == '__main__':
     elif method == 'time_bifurcation_rep':
         channel = arg[5]
         norm.time_bifurcation_rep(filename, channel)
+    elif method == 'time_bifurcation_all':
+        channel = arg[5]
+        magnif = arg[6]
+        norm.time_bifurcation_all(filename, channel, magnif)

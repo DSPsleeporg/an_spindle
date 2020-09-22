@@ -405,20 +405,20 @@ class Normalization:
             param = df.iloc[i, :]
             if channel != 'g_kleak' and channel != 'g_naleak':
                 p = copy(param)
-                p[channel] = p[channel] * i / 1000
+                p[channel] = p[channel] * magnif
                 g = None
                 gl_name = None
             elif channel == 'g_kleak':
                 self.model.leak.set_div()
                 g_kl = self.model.leak.gkl
                 g = copy(g_kl)
-                g = g * i / 1000
+                g = g * magnif
                 gl_name = 'k'
             elif channel == 'g_naleak':
                 self.model.leak.set_div()
                 g_nal = self.model.leak.gnal
                 g = copy(g_nal)
-                g = g * i / 1000
+                g = g * magnif
                 gl_name = 'na'
 
             if self.wavepattern == 'SWS':

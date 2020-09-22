@@ -25,6 +25,7 @@ os.environ['MKL_NUM_THREADS'] = '1'
 sys.path.append('../')
 sys.path.append('../anmodel')
 
+from copy import copy
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -156,14 +157,20 @@ class Normalization:
             else:
                 return [None] * 7
 
-    def norm_sws(self, param: pd.Series, samp_len: int=10) -> List[int]:
+    def norm_sws(self, param: pd.Series, 
+                 gl: float=None, gl_name: str = None, 
+                 samp_len: int=10) -> List[int]:
         """ Normalize frequency of burst firing in SWS firing pattern.
 
         Parameters
         ----------
         param : pd.Series or Dict
             single parameter set
-        samp_len : int
+        gl : float [Optional]
+            leak channel (na/k) conductance for bifurcation analysis
+        gl_name : str [Optional]
+            na / k
+        samp_len : int [Optional]
             sampling time length (sec) (usually 10)
         
         Returns
@@ -172,6 +179,11 @@ class Normalization:
             the index (time (ms)) of the 1st~6th ends of burst firing
         """
         self.model.set_params(param)
+        if gl_name == 'k':
+            self.model.leak.set_gk(gl)
+        elif gl_name == 'na':
+            self.model.leak.set_gna(gl)
+
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
         del(s)
@@ -190,14 +202,20 @@ class Normalization:
             else:
                 return [None] * 7
 
-    def norm_spn(self, param: pd.Series, samp_len: int=10) -> List[int]:
+    def norm_spn(self, param: pd.Series, 
+                 gl: float=None, gl_name: str = None, 
+                 samp_len: int=10) -> List[int]:
         """ Normalize frequency of burst firing in SPN firing pattern.
 
         Parameters
         ----------
         param : pd.Series or Dict
             single parameter set
-        samp_len : int
+        gl : float [Optional]
+            leak channel (na/k) conductance for bifurcation analysis
+        gl_name : str [Optional]
+            na / k
+        samp_len : int [Optional]
             sampling time length (sec) (usually 10)
         
         Returns
@@ -308,6 +326,55 @@ class Normalization:
         plt.figure(figsize=(20, 20))
         sns.heatmap(hm_ca_df.values.tolist(), cmap='jet')
         plt.savefig(res_p/f'{self.wavepattern}_{self.model_name}_ca_hm.png')
+
+    def time_bifurcation(self, filename: str, channel: str) -> None:
+        """ Calculate time points for 1st~6th burst firing for 
+        the representative parameter set through bifurcation.
+
+        Parameters
+        ----------
+        filename : str
+            the name of file in which parameter sets are contained
+        """
+        p: Path = Path.cwd().parents[0]
+        data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
+        filename: str = f'{self.wavepattern}_{self.model_name}_{channel}_time.pickle'
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation' / filename
+        with open(data_p/filename, 'rb') as f:
+            param = pickle.load(f)
+
+        res_df = pd.DataFrame([], columns=range(7), index=range(201))
+        for i in tqdm(res_df.index):
+            if channel != 'g_kleak' and channel != 'g_naleak':
+                p = copy(param)
+                p[channel] = p[channel] * i / 100
+                g = None
+                gl_name = None
+            elif channel == 'g_kleak':
+                g_kl = self.model.leak.gkl
+                g = copy(g_kl)
+                g = g * i / 100
+                gl_name = 'k'
+            elif channel == 'g_naleak':
+                g_nal = self.model.leak.gnal
+                g = copy(g_nal)
+                g = g * i / 100
+                gl_name = 'na'
+
+            if self.wavepattern == 'SWS':
+                res_df.iloc[i, :] = self.norm_sws(p, g, gl_name)
+            elif self.wavepattern == 'SPN':
+                res_df.iloc[i, :] = self.norm_spn(p, g, gl_name)
+            else:
+                raise NameError(f'Wavepattern {self.wavepattern} is unvalid.')
+
+            if i%10 == 0:
+                with open(res_p, 'wb') as f:
+                    pickle.dump(res_df, f)
+                print(f'Now i={i}, and pickled')
+
+        with open(res_p, 'wb') as f:
+            pickle.dump(res_df, f)
 
 
 if __name__ == '__main__':

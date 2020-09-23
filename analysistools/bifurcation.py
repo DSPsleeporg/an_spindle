@@ -96,9 +96,11 @@ class Analysis:
                 'ca': self.s[t, 2]
             })
         ct1 = ax.contour(v_grid, l_grid, dldt, 
-                         levels=[0], colors='steelblue')
+                         levels=[0], colors='steelblue', 
+                         linestyles='dashed', linewidths=2.5)
         ct2 = ax.contour(v_grid, l_grid, dvdt, 
-                         levels=[0], colors='forestgreen')
+                         levels=[0], colors='forestgreen', 
+                         linestyles='dotted', linewidths=2.5)
         ct1.collections[0].set_label('$dm/dt=0$')
         ct2.collections[0].set_label('$dv/dt=0$')
         if flow:
@@ -486,6 +488,45 @@ class Property:
         with open(save_p, 'wb') as f:
             pickle.dump(df, f)
 
+    def plot_singleprocess(self, args: List):
+        _, df, channel, pct = args
+        p: Path = Path.cwd().parents[0]
+        res_p: Path = p / 'results' / 'bifurcation'  / 'plot' / f'{self.model_name}_{self.wavepattern}'
+        res_p.mkdir(parents=True, exist_ok=True)
+        
+        for idx in df.index:
+            _, ax = plt.subplots(1, 3, figsize=(14, 4))
+            param = df.loc[idx, :]
+            self.model.set_params(param)
+            s, _ = self.model.run_odeint()
+            ax[1].plot(s[5000:, 0])
+
+            param_sm = copy(param)
+            param_lg = copy(param)
+            param_sm[channel] = param_sm[channel] * (1-pct)
+            param_lg[channel] = param_lg[channel] * (1+pct)
+            self.model.set_params(param_sm)
+            s_sm, _ = self.model.run_odeint()
+            self.model.set_params(param_lg)
+            s_lg, _ = self.model.run_odeint()
+            ax[0].plot(s_sm[5000:, 0])
+            ax[2].plot(s_lg[5000:, 0])
+            plt.savefig(res_p/f'index_{idx}')
+
+    def plot_multisingleprocess(self, filename, channel, pct, ncore):
+        args = []
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / f'{self.wavepattern}_params' / f'{self.model_name}' / filename
+        with open(res_p, 'rb') as f:
+            param_df = pickle.load(f)
+        param_df.index = range(len(param_df))
+        for core in range(ncore):
+            group = pd.qcut(list(param_df.index), ncore, labels=False)
+            df = param_df.loc[group==core, :]
+            args.append((core, df, channel, pct))
+        with Pool(processes=ncore) as pool:
+            pool.map(self.plot_singleprocess, args)
+            
 
 if __name__ == '__main__':
     arg: List = sys.argv

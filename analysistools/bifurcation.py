@@ -491,7 +491,7 @@ class Property:
     def plot_singleprocess(self, args: List):
         _, df, channel, pct = args
         p: Path = Path.cwd().parents[0]
-        res_p: Path = p / 'results' / 'bifurcation'  / 'plot' / f'{self.model_name}_{self.wavepattern}'
+        res_p: Path = p / 'results' / 'bifurcation'  / 'plot' / f'{self.model_name}_{self.wavepattern}' / f'{pct}'
         res_p.mkdir(parents=True, exist_ok=True)
         
         for idx in df.index:
@@ -513,7 +513,7 @@ class Property:
             ax[2].plot(s_lg[5000:, 0])
             plt.savefig(res_p/f'index_{idx}')
 
-    def plot_multisingleprocess(self, filename, channel, pct, ncore):
+    def plot_multisingleprocess(self, filename, pct, ncore):
         args = []
         p: Path = Path.cwd().parents[0]
         res_p = p / 'results' / f'{self.wavepattern}_params' / f'{self.model_name}' / filename
@@ -523,7 +523,7 @@ class Property:
         for core in range(ncore):
             group = pd.qcut(list(param_df.index), ncore, labels=False)
             df = param_df.loc[group==core, :]
-            args.append((core, df, channel, pct))
+            args.append((core, df, self.channel, pct))
         with Pool(processes=ncore) as pool:
             pool.map(self.plot_singleprocess, args)
             
@@ -590,3 +590,28 @@ if __name__ == '__main__':
                 wavepattern=wavepattern, 
             )
         prp.main(filename=filename)
+
+    elif method == 'plot':
+        channel = arg[5]
+        magnif = None
+        pct = float(arg[6])
+        ncore = int(arg[7])
+        if model == 'X':
+            channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
+            model_name = 'RAN'
+            prp = analysistools.bifurcation.Property(
+                channel=channel, 
+                magnif=magnif, 
+                model=model, 
+                wavepattern=wavepattern, 
+                channel_bool=channel_bool, 
+                model_name=model_name, 
+            )
+        else:
+            prp = analysistools.bifurcation.Property(
+                channel=channel,
+                magnif=magnif, 
+                model=model, 
+                wavepattern=wavepattern, 
+            )
+        prp.plot_multisingleprocess(filename=filename, pct=pct, ncore=ncore)

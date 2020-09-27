@@ -449,7 +449,7 @@ class Property:
                               ]
         return reslst
 
-    def main(self, filename: str, t_filename='filename'):
+    def main(self, filename: str, t_filename='normal'):
         now: datetime = datetime.now()
         date: str = f'{now.year}_{now.month}_{now.day}'
         p: Path = Path.cwd().parents[0]
@@ -460,10 +460,10 @@ class Property:
 
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         time_p: Path = p / 'results' / 'normalization_mp_ca'
-        if t_filename == 'filename':
-            t_file = f'{filename}_time.pickle'
-        elif t_filename == 'pre_ver':
+        if t_filename == 'normal':
             t_file = f'{self.wavepattern}_{self.model_name}_time.pickle'
+        elif t_filename == 'bifur':
+            t_file = f'{filename}_{channel}_{magnif}_time.pickle'
         else:
             t_file = t_filename
 

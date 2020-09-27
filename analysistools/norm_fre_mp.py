@@ -257,7 +257,8 @@ class Normalization:
         """
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
-        res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_{self.model_name}_time.pickle'
+        # res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_{self.model_name}_time.pickle'
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{filename}_time.pickle'
         with open(data_p/filename, 'rb') as f:
             df = pickle.load(f)
 
@@ -319,9 +320,9 @@ class Normalization:
                 hm_df.iloc[i, :] = v_norm
                 hm_ca_df.iloc[i, :] = ca_norm
 
-        with open(res_p/f'{self.wavepattern}_{self.model_name}_mp.pickle', 'wb') as f:
+        with open(res_p/f'{filename}_mp.pickle', 'wb') as f:
             pickle.dump(hm_df, f)
-        with open(res_p/f'{self.wavepattern}_{self.model_name}_ca.pickle', 'wb') as f:
+        with open(res_p/f'{filename}_ca.pickle', 'wb') as f:
             pickle.dump(hm_ca_df, f)
         
         plt.figure(figsize=(20, 20))
@@ -395,7 +396,7 @@ class Normalization:
         """
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
-        resname: str = f'{self.wavepattern}_{self.model_name}_{channel}_{magnif}_time.pickle'
+        resname: str = f'{filename}_{channel}_{magnif}_time.pickle'
         res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation_all' / resname
         with open(data_p/filename, 'rb') as f:
             df = pickle.load(f)

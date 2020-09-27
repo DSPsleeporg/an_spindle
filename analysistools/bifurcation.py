@@ -449,7 +449,7 @@ class Property:
                               ]
         return reslst
 
-    def main(self, filename: str):
+    def main(self, filename: str, t_filename=None):
         now: datetime = datetime.now()
         date: str = f'{now.year}_{now.month}_{now.day}'
         p: Path = Path.cwd().parents[0]
@@ -459,9 +459,14 @@ class Property:
 
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         time_p: Path = p / 'results' / 'normalization_mp_ca'
+        if t_filename is not None:
+            t_file = f'{self.wavepattern}_{self.model_name}_time.pickle'
+        else:
+            t_file = f'{filename}_time.pickle'
+
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)
-        with open(time_p/f'{self.wavepattern}_{self.model_name}_time.pickle', 'rb') as f:
+        with open(time_p/t_file, 'rb') as f:
             time_df = pickle.load(f)
 
         data: List = ['nspike', 

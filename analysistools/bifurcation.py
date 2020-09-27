@@ -449,20 +449,23 @@ class Property:
                               ]
         return reslst
 
-    def main(self, filename: str, t_filename=None):
+    def main(self, filename: str, t_filename='filename'):
         now: datetime = datetime.now()
         date: str = f'{now.year}_{now.month}_{now.day}'
         p: Path = Path.cwd().parents[0]
         res_p: Path = p / 'results' / 'bifurcation'  / 'property' / f'{self.model_name}_{self.wavepattern}'
         res_p.mkdir(parents=True, exist_ok=True)
-        save_p: Path = res_p / f'{date}_{self.channel}_{self.magnif}.pickle'
+        save_p: Path = res_p /f'{filename}'/f'{date}_{self.channel}_{self.magnif}.pickle'
+        save_p.mkdir(parents=True, exist_ok=True)
 
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         time_p: Path = p / 'results' / 'normalization_mp_ca'
-        if t_filename is not None:
+        if t_filename == 'filename':
+            t_file = f'{filename}_time.pickle'
+        elif t_filename == 'pre_ver':
             t_file = f'{self.wavepattern}_{self.model_name}_time.pickle'
         else:
-            t_file = f'{filename}_time.pickle'
+            t_file = t_filename
 
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)

@@ -574,8 +574,9 @@ if __name__ == '__main__':
         sm.multi_singleprocess(filename)
 
     elif method == 'property':
-        channel = arg[5]
-        magnif = float(arg[6])
+        t_filename = arg[5]
+        channel = arg[6]
+        magnif = float(arg[7])
         if model == 'X':
             channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
             model_name = 'RAN'

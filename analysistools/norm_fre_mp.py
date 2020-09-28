@@ -397,7 +397,7 @@ class Normalization:
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         resname: str = f'{filename}_{channel}_{magnif}_time.pickle'
-        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation_all' / f'{self.model_name}' / resname
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation_all' / f'{self.model_name}'
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             df = pickle.load(f)
@@ -431,10 +431,10 @@ class Normalization:
                 raise NameError(f'Wavepattern {self.wavepattern} is unvalid.')
 
             if i%10 == 0:
-                with open(res_p, 'wb') as f:
+                with open(res_p/resname, 'wb') as f:
                     pickle.dump(res_df, f)
                 print(f'Now i={i}, and pickled')
-        with open(res_p, 'wb') as f:
+        with open(res_p/resname, 'wb') as f:
             pickle.dump(res_df, f)
 
 

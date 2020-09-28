@@ -455,7 +455,7 @@ class Property:
         p: Path = Path.cwd().parents[0]
         res_p: Path = p / 'results' / 'bifurcation'  / 'property' / f'{self.model_name}_{self.wavepattern}'
         res_p.mkdir(parents=True, exist_ok=True)
-        save_p: Path = res_p /f'{filename}'/f'{date}_{self.channel}_{self.magnif}.pickle'
+        save_p: Path = res_p /f'{filename}'
         save_p.mkdir(parents=True, exist_ok=True)
 
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
@@ -463,9 +463,9 @@ class Property:
         if t_filename == 'normal':
             t_file = time_p / f'{self.wavepattern}_{self.model_name}_time.pickle'
         elif t_filename == 'bifur':
-            t_file = time_p / f'{self.wavepattern}_{self.model_name}' / f'{filename}_{channel}_{magnif}_time.pickle'
+            t_file = time_p / f'{self.wavepattern}_{self.model_name}_{filename}_{channel}_{magnif}_time.pickle'
         else:
-            t_file = time_p / t_filename
+            t_file = time_p / f'{self.wavepattern}_{self.model_name}_{t_filename}'
 
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)
@@ -493,7 +493,7 @@ class Property:
                 v: np.ndarray = s[e[0]:e[6], 0]
                 infolst = self.getinfo(v)
                 df.loc[i] = infolst
-        with open(save_p, 'wb') as f:
+        with open(save_p/f'{date}_{self.channel}_{self.magnif}.pickle', 'wb') as f:
             pickle.dump(df, f)
 
     def plot_singleprocess(self, args: List):

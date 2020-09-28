@@ -461,15 +461,15 @@ class Property:
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         time_p: Path = p / 'results' / 'normalization_mp_ca'
         if t_filename == 'normal':
-            t_file = f'{self.wavepattern}_{self.model_name}_time.pickle'
+            t_file = time_p / f'{self.wavepattern}_{self.model_name}_time.pickle'
         elif t_filename == 'bifur':
-            t_file = f'{filename}_{channel}_{magnif}_time.pickle'
+            t_file = time_p / f'{self.wavepattern}_{self.model_name}' / f'{filename}_{channel}_{magnif}_time.pickle'
         else:
-            t_file = t_filename
+            t_file = time_p / t_filename
 
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)
-        with open(time_p/t_file, 'rb') as f:
+        with open(t_file, 'rb') as f:
             time_df = pickle.load(f)
 
         data: List = ['nspike', 

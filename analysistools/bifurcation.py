@@ -465,12 +465,17 @@ class Property:
         elif t_filename == 'bifur':
             t_file = time_p /'bifurcation_all'/f'{self.model_name}' / f'{filename}_{self.channel}_{self.magnif}_time.pickle'
         else:
-            t_file = time_p / f'{self.wavepattern}_{self.model_name}_{t_filename}'
+            t_file = time_p / f'{t_filename}'
 
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)
+            param_df.index = range(len(param_df))
         with open(t_file, 'rb') as f:
             time_df = pickle.load(f)
+            time_df.index = range(len(time_df))
+        
+        if len(param_df) != len(time_df):
+            raise IndexError('Parameter dataframe and time dataframe do not match!!')
 
         data: List = ['nspike', 
                       'average_spike_per_burst', 
@@ -543,11 +548,11 @@ if __name__ == '__main__':
     wavepattern = arg[3]
     filename = arg[4]
     if method == 'wavepattern':
-        if model == 'X':
+        if model == 'RAN':
             channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
             model_name = 'RAN'
             wp = analysistools.bifurcation.WavePattern(
-                model=model, 
+                model='X', 
                 wavepattern=wavepattern, 
                 channel_bool=channel_bool, 
                 model_name=model_name, 
@@ -560,11 +565,11 @@ if __name__ == '__main__':
         wp.multi_singleprocess(filename)
 
     elif method == 'simple':
-        if model == 'X':
+        if model == 'RAN':
             channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
             model_name = 'RAN'
             sm = analysistools.bifurcation.Simple(
-                model=model, 
+                model='X', 
                 wavepattern=wavepattern, 
                 channel_bool=channel_bool, 
                 model_name=model_name, 
@@ -580,13 +585,13 @@ if __name__ == '__main__':
         t_filename = arg[5]
         channel = arg[6]
         magnif = float(arg[7])
-        if model == 'X':
+        if model == 'RAN':
             channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
             model_name = 'RAN'
             prp = analysistools.bifurcation.Property(
                 channel=channel, 
                 magnif=magnif, 
-                model=model, 
+                model='X', 
                 wavepattern=wavepattern, 
                 channel_bool=channel_bool, 
                 model_name=model_name, 
@@ -605,13 +610,13 @@ if __name__ == '__main__':
         magnif = None
         pct = float(arg[6])
         ncore = int(arg[7])
-        if model == 'X':
+        if model == 'RAN':
             channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
             model_name = 'RAN'
             prp = analysistools.bifurcation.Property(
                 channel=channel, 
                 magnif=magnif, 
-                model=model, 
+                model='X', 
                 wavepattern=wavepattern, 
                 channel_bool=channel_bool, 
                 model_name=model_name, 

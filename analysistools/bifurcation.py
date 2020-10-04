@@ -463,7 +463,7 @@ class Property:
         if t_filename == 'normal':
             t_file = time_p / f'{self.wavepattern}_{self.model_name}_time.pickle'
         elif t_filename == 'bifur':
-            t_file = time_p / f'{self.wavepattern}_{self.model_name}_{filename}_{channel}_{magnif}_time.pickle'
+            t_file = time_p /'bifurcation_all'/f'{self.model_name}' / f'{filename}_{self.channel}_{self.magnif}_time.pickle'
         else:
             t_file = time_p / f'{self.wavepattern}_{self.model_name}_{t_filename}'
 
@@ -598,7 +598,7 @@ if __name__ == '__main__':
                 model=model, 
                 wavepattern=wavepattern, 
             )
-        prp.main(filename=filename)
+        prp.main(filename=filename, t_filename=t_filename)
 
     elif method == 'plot':
         channel = arg[5]

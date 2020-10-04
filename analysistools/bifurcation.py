@@ -469,9 +469,11 @@ class Property:
 
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)
+            param_df = param_df.dropna()
             param_df.index = range(len(param_df))
         with open(t_file, 'rb') as f:
             time_df = pickle.load(f)
+            time_df = time_df.dropna()
             time_df.index = range(len(time_df))
         
         if len(param_df) != len(time_df):

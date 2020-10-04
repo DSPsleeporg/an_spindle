@@ -465,12 +465,17 @@ class Property:
         elif t_filename == 'bifur':
             t_file = time_p / f'{self.wavepattern}_{self.model_name}_{filename}_{channel}_{magnif}_time.pickle'
         else:
-            t_file = time_p / f'{self.wavepattern}_{self.model_name}_{t_filename}'
+            t_file = time_p / f'{t_filename}'
 
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)
+            param_df.index = range(len(param_df))
         with open(t_file, 'rb') as f:
             time_df = pickle.load(f)
+            time_df.index = range(len(time_df))
+        
+        if len(param_df) != len(time_df):
+            raise IndexError('Parameter dataframe and time dataframe do not match!!')
 
         data: List = ['nspike', 
                       'average_spike_per_burst', 

@@ -56,8 +56,8 @@ class PCA:
         pos = np.vstack([x.ravel(), y.ravel()])
         kernel_pc12 = gaussian_kde(pc_df[['pc1', 'pc2']].T)
         z = np.reshape(kernel_pc12.pdf(pos), x.shape)
-        ax.scatter(pc_df['pc1'], pc_df['pc2'], s=3, alpha=0.7, color='skyblue')
-        ax.scatter(reppc['pc1'], reppc['pc2'], color='red')
+        ax.scatter(pc_df['pc1'], pc_df['pc2'], s=9, alpha=0.7, color='skyblue')
+        ax.scatter(reppc['pc1'], reppc['pc2'], s=9, color='red')
         ax.contour(x, y, z, alpha=1, cmap='OrRd')
         return ax
 
@@ -86,3 +86,7 @@ class PCA:
         kde_score = kernel.pdf(pc_df[pc_lst].T)
         maxidx = np.where(kde_score == kde_score.max())
         return maxidx
+
+    def plot_exp_ratio(self, ax: mpl.axes.Axes):
+        ax.plot(np.cumsum(self.pca.explained_variance_ratio_), marker='.', color='m')
+        return ax

@@ -491,15 +491,12 @@ class Property:
             param: pd.Series = copy(param_df.iloc[i, :])
             param[self.channel] = param[self.channel] * self.magnif
             e = time_df.iloc[i, :]
-            if e[0] == None:
-                pass
-            else:
-                samp_len = 10 + ((5000+e[6])//10000) * 10
-                self.model.set_params(param)
-                s, _ = self.model.run_odeint(samp_freq=self.samp_freq, samp_len=samp_len)
-                v: np.ndarray = s[e[0]:e[6], 0]
-                infolst = self.getinfo(v)
-                df.loc[i] = infolst
+            samp_len = 10 + ((5000+e[6])//10000) * 10
+            self.model.set_params(param)
+            s, _ = self.model.run_odeint(samp_freq=self.samp_freq, samp_len=samp_len)
+            v: np.ndarray = s[e[0]:e[6], 0]
+            infolst = self.getinfo(v)
+            df.loc[i] = infolst
         with open(save_p/f'{date}_{self.channel}_{self.magnif}.pickle', 'wb') as f:
             pickle.dump(df, f)
 

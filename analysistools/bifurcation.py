@@ -96,13 +96,13 @@ class Analysis:
                 'ca': self.s[t, 2]
             })
         ct1 = ax.contour(v_grid, l_grid, dldt, 
-                         levels=[0], colors='steelblue', 
-                         linestyles='dashed', linewidths=2.5)
+                         levels=[0], colors='steelblue', # 4682b4
+                         linestyles='-', linewidths=3)
         ct2 = ax.contour(v_grid, l_grid, dvdt, 
-                         levels=[0], colors='forestgreen', 
-                         linestyles='dotted', linewidths=2.5)
-        ct1.collections[0].set_label('$dm/dt=0$')
-        ct2.collections[0].set_label('$dv/dt=0$')
+                         levels=[0], colors='forestgreen', # 228b22
+                         linestyles='-', linewidths=3)
+        # ct1.collections[0].set_label('$dm/dt=0$')
+        # ct2.collections[0].set_label('$dv/dt=0$')
         if flow:
             ax.streamplot(np.arange(vmin, vmax, 0.1), 
                           np.arange(lmin, lmax, 0.001), 
@@ -114,10 +114,10 @@ class Analysis:
                 legend: bool=False, ) -> plt.axes :
         eq_color = {
             'Stable node' : 'C0', 
-            'Unstable node' : 'C1', 
-            'Saddle' : 'C4', 
-            'Stable focus' : 'magenta', 
-            'Unstable focus' : 'C2', 
+            'Unstable node' : 'darkorange', # ff8c00
+            'Saddle' : 'darkolivegreen', # 556b2f
+            'Stable focus' : 'royalblue', # 4169e1
+            'Unstable focus' : 'mediumvioletred', # c71585
             'Center (Hopf)' : 'C5', 
             'Transcritical (Saddle-Node)' : 'C6'
         }
@@ -126,7 +126,7 @@ class Analysis:
             'Unstable node' : 'solid', 
             'Saddle' : 'dashdot', 
             'Stable focus' : 'dashed', 
-            'Unstable focus' : 'solid', 
+            'Unstable focus' : 'dotted', 
             'Center (Hopf)' : 'solid', 
             'Transcritical (Saddle-Node)' : 'solid'
         }
@@ -229,9 +229,13 @@ class Analysis:
             labels = labels.union(frozenset(nat))
             seg = _get_segments(nat)
             for idx, n in seg.items():
-                ax.plot(ca_space[idx[0]:idx[1]], eq[idx[0]:idx[1]], 
+                # ax.plot(ca_space[idx[0]:idx[1]], eq[idx[0]:idx[1]], 
+                #         color=eq_color[n] if n in eq_color else 'k', 
+                #         linestyle=eq_linestyle[n] if n in eq_linestyle else '-')
+                ax.plot(eq[idx[0]:idx[1]], ca_space[idx[0]:idx[1]], 
                         color=eq_color[n] if n in eq_color else 'k', 
-                        linestyle=eq_linestyle[n] if n in eq_linestyle else '-')
+                        linestyle=eq_linestyle[n] if n in eq_linestyle else '-', 
+                        linewidth=4)
         if legend:
             ax.legend([mpatches.Patch(color=eq_color[n]) for n in labels],
                       labels,
@@ -503,7 +507,7 @@ class Property:
     def plot_singleprocess(self, args: List):
         _, df, channel, pct = args
         p: Path = Path.cwd().parents[0]
-        res_p: Path = p / 'results' / 'bifurcation'  / 'plot' / f'{self.model_name}_{self.wavepattern}' / f'{pct}'
+        res_p: Path = p / 'results' / 'bifurcation'  / 'plot' / f'{self.model_name}_{self.wavepattern}' / f'{channel}_{pct}'
         res_p.mkdir(parents=True, exist_ok=True)
         
         for idx in df.index:

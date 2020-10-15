@@ -405,20 +405,20 @@ class Normalization:
         res_df = pd.DataFrame([], columns=range(7), index=range(len(df)))
         for i in tqdm(range(len(df))):
             param = df.iloc[i, :]
+            param_c = copy(param)
             if channel != 'g_kleak' and channel != 'g_naleak':
-                p = copy(param)
-                p[channel] = p[channel] * magnif
+                param_c[channel] = param_c[channel] * magnif
                 g = None
                 gl_name = None
             elif channel == 'g_kleak':
-                self.model.set_params(param)
+                self.model.set_params(param_c)
                 self.model.leak.set_div()
                 g_kl = self.model.leak.gkl
                 g = copy(g_kl)
                 g = g * magnif
                 gl_name = 'k'
             elif channel == 'g_naleak':
-                self.model.set_params(param)
+                self.model.set_params(param_c)
                 self.model.leak.set_div()
                 g_nal = self.model.leak.gnal
                 g = copy(g_nal)
@@ -426,7 +426,7 @@ class Normalization:
                 gl_name = 'na'
 
             if self.wavepattern == 'SWS':
-                res_df.loc[i, :] = self.norm_sws(p, g, gl_name)
+                res_df.loc[i, :] = self.norm_sws(param_c, g, gl_name)
             elif self.wavepattern == 'SPN':
                 res_df.loc[i, :] = self.norm_spn(p, g, gl_name)
             else:

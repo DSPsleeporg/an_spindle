@@ -772,7 +772,7 @@ class Xmodel(ANmodel):
 
         Parameters
         ----------
-        params : dictionary
+        params : dictionary / pd.Series
             channel and pump parameters
 
         Raise

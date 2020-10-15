@@ -411,12 +411,14 @@ class Normalization:
                 g = None
                 gl_name = None
             elif channel == 'g_kleak':
+                self.model.set_params(param)
                 self.model.leak.set_div()
                 g_kl = self.model.leak.gkl
                 g = copy(g_kl)
                 g = g * magnif
                 gl_name = 'k'
             elif channel == 'g_naleak':
+                self.model.set_params(param)
                 self.model.leak.set_div()
                 g_nal = self.model.leak.gnal
                 g = copy(g_nal)

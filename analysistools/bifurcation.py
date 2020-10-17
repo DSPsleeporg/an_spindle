@@ -509,7 +509,10 @@ class Property:
                     self.model.leak.set_gna(g_nal)
 
             e = time_df.iloc[i, :]
-            samp_len = 10 + ((5000+e[6])//10000) * 10
+            try:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+            except TypeError:
+                continue
             s, _ = self.model.run_odeint(samp_freq=self.samp_freq, samp_len=samp_len)
             v: np.ndarray = s[e[0]:e[6], 0]
             infolst = self.getinfo(v)

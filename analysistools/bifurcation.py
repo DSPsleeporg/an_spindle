@@ -528,7 +528,7 @@ class Property:
                 s_lg, _ = self.model.run_odeint()
                 s_lg, _ = self.model.run_odeint()
             elif channel == 'g_kleak' or channel == 'g_naleak':
-                self.model.set_params(param_c)
+                self.model.set_params(param)
                 self.model.leak.set_div()
                 if channel == 'g_kleak':
                     g_kl = self.model.leak.gkl

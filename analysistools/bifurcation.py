@@ -517,14 +517,40 @@ class Property:
             s, _ = self.model.run_odeint()
             ax[1].plot(s[5000:, 0])
 
-            param_sm = copy(param)
-            param_lg = copy(param)
-            param_sm[channel] = param_sm[channel] * (1-pct)
-            param_lg[channel] = param_lg[channel] * (1+pct)
-            self.model.set_params(param_sm)
-            s_sm, _ = self.model.run_odeint()
-            self.model.set_params(param_lg)
-            s_lg, _ = self.model.run_odeint()
+            if channel != 'g_kleak' and channel != 'g_naleak':
+                param_sm = copy(param)
+                param_lg = copy(param)
+                param_sm[channel] = param_sm[channel] * (1-pct)
+                param_lg[channel] = param_lg[channel] * (1+pct)
+                self.model.set_params(param_sm)
+                s_sm, _ = self.model.run_odeint()
+                self.model.set_params(param_lg)
+                s_lg, _ = self.model.run_odeint()
+                s_lg, _ = self.model.run_odeint()
+            elif channel == 'g_kleak' or channel == 'g_naleak':
+                self.model.set_params(param_c)
+                self.model.leak.set_div()
+                if channel == 'g_kleak':
+                    g_kl = self.model.leak.gkl
+                    g_sm = copy(g_kl)
+                    g_lg = copy(g_kl)
+                    g_sm = g_sm * (1-pct)
+                    g_lg = g_lg * (1+pct)
+                    self.model.leak.set_gk(g_sm)
+                    s_sm, _ = self.model.run_odeint()
+                    self.model.leak.set_gk(g_lg)
+                    s_lg, _ = self.model.run_odeint()
+                elif channel == 'g_naleak':
+                    g_nal = self.model.leak.gnal
+                    g_sm = copy(g_nal)
+                    g_lg = copy(g_nal)
+                    g_sm = g_sm * (1-pct)
+                    g_lg = g_lg * (1+pct)
+                    self.model.leak.set_gna(g_sm)
+                    s_sm, _ = self.model.run_odeint()
+                    self.model.leak.set_gna(g_lg)
+                    s_lg, _ = self.model.run_odeint()
+
             ax[0].plot(s_sm[5000:, 0])
             ax[2].plot(s_lg[5000:, 0])
             plt.savefig(res_p/f'index_{idx}')

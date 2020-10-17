@@ -550,6 +550,7 @@ class Property:
                     s_sm, _ = self.model.run_odeint()
                     self.model.leak.set_gna(g_lg)
                     s_lg, _ = self.model.run_odeint()
+                self.model.leak.reset_div()
 
             ax[0].plot(s_sm[5000:, 0])
             ax[2].plot(s_lg[5000:, 0])

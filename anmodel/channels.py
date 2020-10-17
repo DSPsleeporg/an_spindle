@@ -162,6 +162,11 @@ class Leak(Base):
         self.gnal = self.g * (self.e - self.vkl) / (self.vnal - self.vkl)
         self.gkl = self.g * (self.e - self.vnal) / (self.vkl - self.vnal)
 
+    def rsest_div(self) -> None:
+        """ Combine Na/K leak into single leak channel.
+        """
+        self.div = False
+
     def set_gna(self, new_gnal: float) -> None:
         """ Set a new conductance for a leak sodium channel.
 

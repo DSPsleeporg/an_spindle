@@ -493,10 +493,23 @@ class Property:
         df: pd.DataFrame = pd.DataFrame(columns=data)
         for i in tqdm(range(len(time_df))):
             param: pd.Series = copy(param_df.iloc[i, :])
-            param[self.channel] = param[self.channel] * self.magnif
+            if self.channel != 'g_kleak' and self.channel != 'g_naleak':
+                param[self.channel] = param[self.channel] * self.magnif
+                self.model.set_params(param)
+            elif self.channel == 'g_kleak' or self.channel == 'g_naleak':
+                self.model.set_params(param)
+                self.model.leak.set_div()
+                if self.channel == 'g_kleak':
+                    g_kl = self.model.leak.gkl
+                    g_kl = g_kl * self.magnif
+                    self.model.leak.set_gk(g_kl)
+                elif self.channel == 'g_naleak':
+                    g_nal = self.model.leak.gnal
+                    g_nal = g_nal * self.magnif
+                    self.model.leak.set_gna(g_nal)
+
             e = time_df.iloc[i, :]
             samp_len = 10 + ((5000+e[6])//10000) * 10
-            self.model.set_params(param)
             s, _ = self.model.run_odeint(samp_freq=self.samp_freq, samp_len=samp_len)
             v: np.ndarray = s[e[0]:e[6], 0]
             infolst = self.getinfo(v)

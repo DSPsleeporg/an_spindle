@@ -162,7 +162,7 @@ class Leak(Base):
         self.gnal = self.g * (self.e - self.vkl) / (self.vnal - self.vkl)
         self.gkl = self.g * (self.e - self.vnal) / (self.vkl - self.vnal)
 
-    def rsest_div(self) -> None:
+    def reset_div(self) -> None:
         """ Combine Na/K leak into single leak channel.
         """
         self.div = False

@@ -25,7 +25,9 @@ os.environ['MKL_NUM_THREADS'] = '1'
 sys.path.append('../')
 sys.path.append('../anmodel')
 
+from datetime import datetime
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -40,11 +42,15 @@ import analysistools
 
 
 class AN:
-    def __init__(self, param: pd.Series,
+    def __init__(self, wavepattern: str, 
                  ion: bool=False, concentration: Dict=None) -> None:
         self.model = anmodel.models.ANmodel()
+<<<<<<< HEAD
         self.cnst = anmodel.params.Constants()
         self.set_params(param)
+=======
+        self.wavepattern = wavepattern
+>>>>>>> ef06168e18802e3041675031619f00c9d17b1ac2
 
     def set_params(self, param: pd.Series) -> None:
         self.leak = anmodel.channels.Leak(g=float(param['g_leak']))
@@ -130,12 +136,68 @@ class AN:
         ip_in = [i_nal_p, i_nav_p, i_cav_p, i_nap_p, i_ampar_in_p, i_nmdar_in_p, i_gabar_in_p]
         return ip_out, ip_in
 
+    def p_heatmap(self, filename: str):
+        now = datetime.now()
+        date = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'AN' / date
+        res_p.mkdir(parents=True, exist_ok=True)
+
+        data_p = p / 'results' / f'{self.wavepattern}_params' / 'AN' / filename
+        time_p = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_AN_time.pickle'
+        with open(data_p, 'rb') as f:
+            param_df = pickle.load(f)
+        with open(time_p, 'rb') as f:
+            time_df = pickle.load(f)
+        param_df.index = range(len(param_df))
+        time_df.index = range(len(time_df))
+        
+        p_res_dic = {
+            'kleak': pd.DataFrame([], columns=range(48), index=param_df.index), 
+            'kvhh': pd.DataFrame([], columns=range(48), index=param_df.index), 
+            'kva': pd.DataFrame([], columns=range(48), index=param_df.index), 
+            'kvsi': pd.DataFrame([], columns=range(48), index=param_df.index), 
+            'kca': pd.DataFrame([], columns=range(48), index=param_df.index), 
+            'naleak': pd.DataFrame([], columns=range(48), index=param_df.index), 
+            'cav': pd.DataFrame([], columns=range(48), index=param_df.index), 
+            'nap': pd.DataFrame([], columns=range(48), index=param_df.index),
+        }
+        for idx in tqdm(param_df.index):
+            param = param_df.loc[idx, :]
+            self.set_params(param)
+            self.model.set_params(param)
+            e = time_df.loc[idx, :]
+            try:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+            except TypeError:
+                continue
+            s, _ = self.model.run_odeint(samp_len=samp_len)
+            ip_out, ip_in = self.get_p(s[5000:, :])
+            i_kl_p, i_kvsi_p, i_kca_p = ip_out
+            i_nal_p, i_cav_p, i_nap_p = ip_in
+            p_data_dic = {
+                'kleak': i_kl_p, 
+                'kvsi': i_kvsi_p, 
+                'kca': i_kca_p, 
+                'naleak': i_nal_p, 
+                'cav': i_cav_p, 
+                'nap': i_nap_p,
+            }
+            for j in range(len(e)-1):
+                tlst = np.linspace(e[j], e[j+1], 9, dtype=int)
+                for k in range(len(tlst)-1):
+                    for channel in p_res_dic.keys():
+                        p_res_dic[channel].loc[idx, j*8+k] = p_data_dic[channel][tlst[k]:tlst[k+1]].mean()
+
+        for channel in p_res_dic.keys():
+            with open(res_p/channel, 'wb') as f:
+                pickle.dump(p_res_dic[channel], f)
+
 
 class SAN:
-    def __init__(self, param: pd.Series,
-                 ion: bool=False, concentration: Dict=None) -> None:
+    def __init__(self, ion: bool=False, concentration: Dict=None) -> None:
         self.model = anmodel.models.SANmodel()
-        self.set_params(param)
+        self.wavepattern = 'SWS'
 
     def set_params(self, param: pd.Series) -> None:
         self.leak = anmodel.channels.Leak(g=float(param['g_leak']))
@@ -182,11 +244,11 @@ class SAN:
         return ip_out, ip_in
 
 
-class X:
-    def __init__(self, param: pd.Series, channel_bool: List, 
-                 ion: bool=False, concentration: Dict=None) -> None:
+class RAN:
+    def __init__(self, ion: bool=False, concentration: Dict=None) -> None:
+        channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
         self.model = anmodel.models.Xmodel(channel_bool)
-        self.set_params(param)
+        self.wavepattern = 'SPN'
 
     def set_params(self, param: pd.Series) -> None:
         self.leak = anmodel.channels.Leak(g=float(param['g_leak']))
@@ -231,3 +293,114 @@ class X:
         ip_out = [i_kl_p, i_kvsi_p, i_kca_p]
         ip_in = [i_nal_p, i_cav_p, i_nap_p]
         return ip_out, ip_in
+
+    def p_heatmap(self, filename: str):
+        now = datetime.now()
+        date = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'RAN' / date
+        res_p.mkdir(parents=True, exist_ok=True)
+
+        data_p = p / 'results' / f'{self.wavepattern}_params' / 'RAN' / filename
+        time_p = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_RAN_time.pickle'
+        with open(data_p, 'rb') as f:
+            param_df = pickle.load(f)
+        with open(time_p, 'rb') as f:
+            time_df = pickle.load(f)
+        param_df.index = range(len(param_df))
+        time_df.index = range(len(time_df))
+        
+        p_res_dic = {
+            'kleak': pd.DataFrame([], columns=range(48), index=param_df.index), 
+            'kvsi': pd.DataFrame([], columns=range(48), index=param_df.index), 
+            'kca': pd.DataFrame([], columns=range(48), index=param_df.index), 
+            'naleak': pd.DataFrame([], columns=range(48), index=param_df.index), 
+            'cav': pd.DataFrame([], columns=range(48), index=param_df.index), 
+            'nap': pd.DataFrame([], columns=range(48), index=param_df.index),
+        }
+        for idx in tqdm(param_df.index):
+            param = param_df.loc[idx, :]
+            self.set_params(param)
+            self.model.set_params(param)
+            e = time_df.loc[idx, :]
+            try:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+            except TypeError:
+                continue
+            s, _ = self.model.run_odeint(samp_len=samp_len)
+            ip_out, ip_in = self.get_p(s[5000:, :])
+            i_kl_p, i_kvsi_p, i_kca_p = ip_out
+            i_nal_p, i_cav_p, i_nap_p = ip_in
+            p_data_dic = {
+                'kleak': i_kl_p, 
+                'kvsi': i_kvsi_p, 
+                'kca': i_kca_p, 
+                'naleak': i_nal_p, 
+                'cav': i_cav_p, 
+                'nap': i_nap_p,
+            }
+            for j in range(len(e)-1):
+                tlst = np.linspace(e[j], e[j+1], 9, dtype=int)
+                for k in range(len(tlst)-1):
+                    for channel in p_res_dic.keys():
+                        p_res_dic[channel].loc[idx, j*8+k] = p_data_dic[channel][tlst[k]:tlst[k+1]].mean()
+
+        for channel in p_res_dic.keys():
+            with open(res_p/channel, 'wb') as f:
+                pickle.dump(p_res_dic[channel], f)
+
+
+# class Heatmap:
+#     def __init__(self, model: str, wavepattern: str, 
+#                  channel_bool:Optional[Dict]=None, 
+#                  model_name: Optional[str]=None,
+#                  ion: bool=False, concentration: Dict=None):
+#         self.model = model
+#         self.wavepattern = wavepattern
+#         if self.model == 'AN':
+#             self.model_name = 'AN'
+#             self.model = anmodel.models.ANmodel(ion, concentration)
+#             self.cur = AN()
+#         if self.model == 'SAN':
+#             self.model_name = 'SAN'
+#             self.model = anmodel.models.SANmodel(ion, concentration)
+#             self.cur = SAN()
+#         if self.model == 'RAN':
+#             if channel_bool is None:
+#                 raise TypeError('Designate channel in argument of X model.')
+#             self.model_name = model_name
+#             self.model = anmodel.models.Xmodel(channel_bool, ion, concentration)
+#             self.cur = RAN()
+    
+    # def main(self, filename: str):
+    #     self.cur()
+
+
+if __name__ == '__main__':
+    arg: List = sys.argv
+    method = arg[1]
+    model = arg[2]
+    wavepattern = arg[3]
+    filename = arg[4]
+    if method == 'p_heatmap':
+        if model == 'RAN':
+            analysistools.current.RAN().p_heatmap(filename)
+
+    # def all_p_multi_singleprocess(self, filename: str, ncore: int):
+    #     args = []
+    #     p: Path = Path.cwd().parents[0]
+    #     res_p = p / 'results' / f'{self.wavepattern}_params' / 'RAN' / filename
+    #     time_p = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_RAN_time.pickle'
+    #     with open(res_p, 'rb') as f:
+    #         param_df = pickle.load(f)
+    #     with open(time_p, 'rb') as f:
+    #         time_df = pickle.load(f)
+    #     param_df.index = range(len(param_df))
+    #     time_df.index = range(len(time_df))
+    #     for core in range(ncore):
+    #         group = pd.qcut(list(param_df.index), ncore, labels=False)
+    #         d_df = param_df.loc[group==core, :]
+    #         t_df = time_df.loc[group==core, :]
+    #         args.append((core, d_df, t_df))
+    #     with Pool(processes=ncore) as pool:
+    #         pool.map(self.all_p_singleprocess, args)

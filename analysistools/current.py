@@ -43,6 +43,7 @@ class AN:
     def __init__(self, param: pd.Series,
                  ion: bool=False, concentration: Dict=None) -> None:
         self.model = anmodel.models.ANmodel()
+        self.cnst = anmodel.params.Constants()
         self.set_params(param)
 
     def set_params(self, param: pd.Series) -> None:
@@ -99,20 +100,34 @@ class AN:
         i_nmdar = i_lst[12]
         i_gabar = i_lst[13]
 
-        i_out = i_kl + i_kvhh + i_kva + i_kvsi + i_kir + i_kca + i_gabar
-        i_in = i_nal + i_nav + i_cav + i_nap
+        i_ampar_in = [i_ampar[i] if s[i, 0]<self.cnst.vAMPAR else 0 for i in range(len(s))]
+        i_ampar_out = [i_ampar[i] if s[i, 0]>self.cnst.vAMPAR else 0 for i in range(len(s))]
+        i_nmdar_in = [i_nmdar[i] if s[i, 0]<self.cnst.vNMDAR else 0 for i in range(len(s))]
+        i_nmdar_out = [i_nmdar[i] if s[i, 0]>self.cnst.vNMDAR else 0 for i in range(len(s))]
+        i_gabar_in = [i_gabar[i] if s[i, 0]<self.cnst.vGABAR else 0 for i in range(len(s))]
+        i_gabar_out = [i_gabar[i] if s[i, 0]>self.cnst.vGABAR else 0 for i in range(len(s))]
+
+        i_out = i_kl + i_kvhh + i_kva + i_kvsi + i_kir + i_kca + i_ampar_out + i_nmdar_out + i_gabar_out
+        i_in = i_nal + i_nav + i_cav + i_nap + i_ampar_in + i_nmdar_in + i_gabar_in
         i_kl_p = i_kl / i_out
         i_kvhh_p = i_kvhh / i_out
         i_kva_p = i_kva / i_out
+        i_kvsi_p = i_kvsi / i_out
         i_kir_p = i_kir / i_out
         i_kca_p = i_kca / i_out
-        i_gabar_p = i_gabar / i_out
+        i_ampar_out_p = i_ampar_out / i_out
+        i_nmdar_out_p = i_nmdar_out / i_out
+        i_gabar_out_p = i_gabar_out / i_out
         i_nal_p = i_nal / i_in
         i_nav_p = i_nav / i_in
         i_cav_p = i_cav / i_in
         i_nap_p = i_nap / i_in
-        ip_out = [i_kl_p, i_kvhh_p, i_kva_p, i_kir_p, i_kca_p, i_gabar_p]
-        ip_in = [i_nal_p, i_nav_p, i_cav_p, i_nap_p]
+        i_ampar_in_p = i_ampar_in / i_in
+        i_nmdar_in_p = i_nmdar_in / i_in
+        i_gabar_in_p = i_gabar_in / i_in
+        
+        ip_out = [i_kl_p, i_kvhh_p, i_kva_p, i_kvsi_p, i_kir_p, i_kca_p, i_ampar_out_p, i_nmdar_out_p, i_gabar_out_p]
+        ip_in = [i_nal_p, i_nav_p, i_cav_p, i_nap_p, i_ampar_in_p, i_nmdar_in_p, i_gabar_in_p]
         return ip_out, ip_in
 
 

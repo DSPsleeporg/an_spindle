@@ -207,43 +207,43 @@ class AN:
                         p_res_dic[channel].loc[idx, j*8+k] = p_data_dic[channel][tlst[k]:tlst[k+1]].mean()
 
         for channel in p_res_dic.keys():
-            with open(res_p/channel, 'wb') as f:
+            with open(res_p/f'{channel}.pickle', 'wb') as f:
                 pickle.dump(p_res_dic[channel], f)
 
     def load_p_heatmap(self, date):
         p: Path = Path.cwd().parents[0]
         res_p = p / 'results' / 'current' / 'AN' / date
-        with open(res_p/'kleak', 'rb') as f:
+        with open(res_p/'kleak.pickle', 'rb') as f:
             self.kl_hm = pickle.load(f)
-        with open(res_p/'kvhh', 'rb') as f:
+        with open(res_p/'kvhh.pickle', 'rb') as f:
             self.kvhh_hm = pickle.load(f)
-        with open(res_p/'kva', 'rb') as f:
+        with open(res_p/'kva.pickle', 'rb') as f:
             self.kva_hm = pickle.load(f)
-        with open(res_p/'kvsi', 'rb') as f:
+        with open(res_p/'kvsi.pickle', 'rb') as f:
             self.kvsi_hm = pickle.load(f)
-        with open(res_p/'kir', 'rb') as f:
+        with open(res_p/'kir.pickle', 'rb') as f:
             self.kir_hm = pickle.load(f)
-        with open(res_p/'kca', 'rb') as f:
+        with open(res_p/'kca.pickle', 'rb') as f:
             self.kca_hm = pickle.load(f)
-        with open(res_p/'ampar_out', 'rb') as f:
+        with open(res_p/'ampar_out.pickle', 'rb') as f:
             self.ampar_out_hm = pickle.load(f)
-        with open(res_p/'nmdar_out', 'rb') as f:
+        with open(res_p/'nmdar_out.pickle', 'rb') as f:
             self.nmdar_out_hm = pickle.load(f)
-        with open(res_p/'gabar_out', 'rb') as f:
+        with open(res_p/'gabar_out.pickle', 'rb') as f:
             self.gabar_out_hm = pickle.load(f)
-        with open(res_p/'naleak', 'rb') as f:
+        with open(res_p/'naleak.pickle', 'rb') as f:
             self.nal_hm = pickle.load(f)
-        with open(res_p/'nav', 'rb') as f:
+        with open(res_p/'nav.pickle', 'rb') as f:
             self.nav_hm = pickle.load(f)
-        with open(res_p/'cav', 'rb') as f:
+        with open(res_p/'cav.pickle', 'rb') as f:
             self.cav_hm = pickle.load(f)
-        with open(res_p/'nap', 'rb') as f:
+        with open(res_p/'nap.pickle', 'rb') as f:
             self.nap_hm = pickle.load(f)
-        with open(res_p/'ampar_in', 'rb') as f:
+        with open(res_p/'ampar_in.pickle', 'rb') as f:
             self.ampar_in_hm = pickle.load(f)
-        with open(res_p/'nmdar_in', 'rb') as f:
+        with open(res_p/'nmdar_in.pickle', 'rb') as f:
             self.nmdar_in_hm = pickle.load(f)
-        with open(res_p/'gabar_in', 'rb') as f:
+        with open(res_p/'gabar_in.pickle', 'rb') as f:
             self.gabar_in_hm = pickle.load(f)
 
     def b_s_ratio(self, filename: str):
@@ -294,7 +294,12 @@ class AN:
             except TypeError:
                 continue
             s, _ = self.model.run_odeint(samp_len=samp_len)
-            v_sq = self.fs.square_wave(s[e[0]:e[6], 0], spike='bottom')
+            if self.wavepattern == 'SWS':
+                v_sq = self.fs.square_wave(s[e[0]:e[6], 0], spike='peak')
+            elif self.wavepattern == 'SPN':
+                v_sq = self.fs.square_wave(s[e[0]:e[6], 0], spike='bottom')
+            else:
+                raise Exception
             ip_out, ip_in = self.get_p(s[e[0]:e[6], :])
             i_kl_p, i_kvhh_p, i_kva_p, i_kvsi_p, i_kir_p, i_kca_p, i_ampar_out_p, i_nmdar_out_p, i_gabar_out_p = ip_out
             i_nal_p, i_nav_p, i_cav_p, i_nap_p, i_ampar_in_p, i_nmdar_in_p, i_gabar_in_p = ip_in
@@ -433,23 +438,23 @@ class SAN:
                         p_res_dic[channel].loc[idx, j*8+k] = p_data_dic[channel][tlst[k]:tlst[k+1]].mean()
 
         for channel in p_res_dic.keys():
-            with open(res_p/channel, 'wb') as f:
+            with open(res_p/f'{channel}.pickle', 'wb') as f:
                 pickle.dump(p_res_dic[channel], f)
 
     def load_p_heatmap(self, date):
         p: Path = Path.cwd().parents[0]
         res_p = p / 'results' / 'current' / 'SAN' / date
-        with open(res_p/'kleak', 'rb') as f:
+        with open(res_p/'kleak.pickle', 'rb') as f:
             self.kl_hm = pickle.load(f)
-        with open(res_p/'kvhh', 'rb') as f:
+        with open(res_p/'kvhh.pickle', 'rb') as f:
             self.kvhh_hm = pickle.load(f)
-        with open(res_p/'kca', 'rb') as f:
+        with open(res_p/'kca.pickle', 'rb') as f:
             self.kca_hm = pickle.load(f)
-        with open(res_p/'naleak', 'rb') as f:
+        with open(res_p/'naleak.pickle', 'rb') as f:
             self.nal_hm = pickle.load(f)
-        with open(res_p/'cav', 'rb') as f:
+        with open(res_p/'cav.pickle', 'rb') as f:
             self.cav_hm = pickle.load(f)
-        with open(res_p/'nap', 'rb') as f:
+        with open(res_p/'nap.pickle', 'rb') as f:
             self.nap_hm = pickle.load(f)
 
     def b_s_ratio(self, filename: str):
@@ -490,7 +495,7 @@ class SAN:
             except TypeError:
                 continue
             s, _ = self.model.run_odeint(samp_len=samp_len)
-            v_sq = self.fs.square_wave(s[e[0]:e[6], 0], spike='bottom')
+            v_sq = self.fs.square_wave(s[e[0]:e[6], 0], spike='peak')
             ip_out, ip_in = self.get_p(s[e[0]:e[6], :])
             i_kl_p, i_kvhh_p, i_kca_p = ip_out
             i_nal_p, i_cav_p, i_nap_p = ip_in
@@ -618,25 +623,25 @@ class RAN:
                 for k in range(len(tlst)-1):
                     for channel in p_res_dic.keys():
                         p_res_dic[channel].loc[idx, j*8+k] = p_data_dic[channel][tlst[k]:tlst[k+1]].mean()
-
+            
         for channel in p_res_dic.keys():
-            with open(res_p/channel, 'wb') as f:
+            with open(res_p/f'{channel}.pickle', 'wb') as f:
                 pickle.dump(p_res_dic[channel], f)
 
     def load_p_heatmap(self, date):
         p: Path = Path.cwd().parents[0]
         res_p = p / 'results' / 'current' / 'RAN' / date
-        with open(res_p/'kleak', 'rb') as f:
+        with open(res_p/'kleak.pickle', 'rb') as f:
             self.kl_hm = pickle.load(f)
-        with open(res_p/'kvsi', 'rb') as f:
+        with open(res_p/'kvsi.pickle', 'rb') as f:
             self.kvsi_hm = pickle.load(f)
-        with open(res_p/'kca', 'rb') as f:
+        with open(res_p/'kca.pickle', 'rb') as f:
             self.kca_hm = pickle.load(f)
-        with open(res_p/'naleak', 'rb') as f:
+        with open(res_p/'naleak.pickle', 'rb') as f:
             self.nal_hm = pickle.load(f)
-        with open(res_p/'cav', 'rb') as f:
+        with open(res_p/'cav.pickle', 'rb') as f:
             self.cav_hm = pickle.load(f)
-        with open(res_p/'nap', 'rb') as f:
+        with open(res_p/'nap.pickle', 'rb') as f:
             self.nap_hm = pickle.load(f)
 
     def b_s_ratio(self, filename: str):
@@ -717,8 +722,8 @@ if __name__ == '__main__':
             analysistools.current.RAN().p_heatmap(filename)
     elif method == 'b_s_ratio':
         if model == 'AN':
-            analysistools.current.AN(wavepattern=wavepattern).p_heatmap(filename)
-        # elif model == 'SAN':
-        #     analysistools.current.SAN().p_heatmap(filename)
+            analysistools.current.AN(wavepattern=wavepattern).b_s_ratio(filename)
+        elif model == 'SAN':
+            analysistools.current.SAN().b_s_ratio(filename)
         elif model == 'RAN':
             analysistools.current.RAN().b_s_ratio(filename)

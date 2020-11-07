@@ -209,6 +209,42 @@ class AN:
             with open(res_p/channel, 'wb') as f:
                 pickle.dump(p_res_dic[channel], f)
 
+    def load_p_heatmap(self, date):
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'AN' / date
+        with open(res_p/'kleak', 'rb') as f:
+            self.kl_hm = pickle.load(f)
+        with open(res_p/'kvhh', 'rb') as f:
+            self.kvhh_hm = pickle.load(f)
+        with open(res_p/'kva', 'rb') as f:
+            self.kva_hm = pickle.load(f)
+        with open(res_p/'kvsi', 'rb') as f:
+            self.kvsi_hm = pickle.load(f)
+        with open(res_p/'kir', 'rb') as f:
+            self.kir_hm = pickle.load(f)
+        with open(res_p/'kca', 'rb') as f:
+            self.kca_hm = pickle.load(f)
+        with open(res_p/'ampar_out', 'rb') as f:
+            self.ampar_out_hm = pickle.load(f)
+        with open(res_p/'nmdar_out', 'rb') as f:
+            self.nmdar_out_hm = pickle.load(f)
+        with open(res_p/'gabar_out', 'rb') as f:
+            self.gabar_out_hm = pickle.load(f)
+        with open(res_p/'naleak', 'rb') as f:
+            self.nal_hm = pickle.load(f)
+        with open(res_p/'nav', 'rb') as f:
+            self.nav_hm = pickle.load(f)
+        with open(res_p/'cav', 'rb') as f:
+            self.cav_hm = pickle.load(f)
+        with open(res_p/'nap', 'rb') as f:
+            self.nap_hm = pickle.load(f)
+        with open(res_p/'ampar_in', 'rb') as f:
+            self.ampar_in_hm = pickle.load(f)
+        with open(res_p/'nmdar_in', 'rb') as f:
+            self.nmdar_in_hm = pickle.load(f)
+        with open(res_p/'gabar_in', 'rb') as f:
+            self.gabar_in_hm = pickle.load(f)
+
 
 class SAN:
     def __init__(self, ion: bool=False, concentration: Dict=None) -> None:
@@ -315,6 +351,22 @@ class SAN:
         for channel in p_res_dic.keys():
             with open(res_p/channel, 'wb') as f:
                 pickle.dump(p_res_dic[channel], f)
+
+    def load_p_heatmap(self, date):
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'SAN' / date
+        with open(res_p/'kleak', 'rb') as f:
+            self.kl_hm = pickle.load(f)
+        with open(res_p/'kvhh', 'rb') as f:
+            self.kvhh_hm = pickle.load(f)
+        with open(res_p/'kca', 'rb') as f:
+            self.kca_hm = pickle.load(f)
+        with open(res_p/'naleak', 'rb') as f:
+            self.nal_hm = pickle.load(f)
+        with open(res_p/'cav', 'rb') as f:
+            self.cav_hm = pickle.load(f)
+        with open(res_p/'nap', 'rb') as f:
+            self.nap_hm = pickle.load(f)
 
 
 class RAN:
@@ -423,6 +475,22 @@ class RAN:
         for channel in p_res_dic.keys():
             with open(res_p/channel, 'wb') as f:
                 pickle.dump(p_res_dic[channel], f)
+
+    def load_p_heatmap(self, date):
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'RAN' / date
+        with open(res_p/'kleak', 'rb') as f:
+            self.kl_hm = pickle.load(f)
+        with open(res_p/'kvsi', 'rb') as f:
+            self.kvsi_hm = pickle.load(f)
+        with open(res_p/'kca', 'rb') as f:
+            self.kca_hm = pickle.load(f)
+        with open(res_p/'naleak', 'rb') as f:
+            self.nal_hm = pickle.load(f)
+        with open(res_p/'cav', 'rb') as f:
+            self.cav_hm = pickle.load(f)
+        with open(res_p/'nap', 'rb') as f:
+            self.nap_hm = pickle.load(f)
 
 
 if __name__ == '__main__':

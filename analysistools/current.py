@@ -46,6 +46,7 @@ class AN:
                  ion: bool=False, concentration: Dict=None) -> None:
         self.model = anmodel.models.ANmodel()
         self.cnst = anmodel.params.Constants()
+        self.fs = anmodel.analysis.FreqSpike()
         self.wavepattern = wavepattern
 
     def set_params(self, param: pd.Series) -> None:
@@ -136,7 +137,7 @@ class AN:
         now = datetime.now()
         date = f'{now.year}_{now.month}_{now.day}'
         p: Path = Path.cwd().parents[0]
-        res_p = p / 'results' / 'current' / 'AN' / f'{date}_{self.wavepattern}'
+        res_p = p / 'results' / 'current' / 'p_heatmap' / 'AN' / f'{date}_{self.wavepattern}'
         res_p.mkdir(parents=True, exist_ok=True)
 
         data_p = p / 'results' / f'{self.wavepattern}_params' / 'AN' / filename
@@ -182,22 +183,22 @@ class AN:
             i_kl_p, i_kvhh_p, i_kva_p, i_kvsi_p, i_kir_p, i_kca_p, i_ampar_out_p, i_nmdar_out_p, i_gabar_out_p = ip_out
             i_nal_p, i_nav_p, i_cav_p, i_nap_p, i_ampar_in_p, i_nmdar_in_p, i_gabar_in_p = ip_in
             p_data_dic = {
-            'kleak': i_kl_p, 
-            'kvhh': i_kvhh_p, 
-            'kva': i_kva_p, 
-            'kvsi': i_kvsi_p, 
-            'kir': i_kir_p, 
-            'kca': i_kca_p, 
-            'ampar_out': i_ampar_out_p, 
-            'nmdar_out': i_nmdar_out_p, 
-            'gabar_out': i_gabar_out_p, 
-            'naleak': i_nal_p, 
-            'nav': i_nav_p, 
-            'cav': i_cav_p, 
-            'nap': i_nap_p,
-            'ampar_in': i_ampar_in_p, 
-            'nmdar_in': i_nmdar_in_p, 
-            'gabar_in': i_gabar_in_p, 
+                'kleak': i_kl_p, 
+                'kvhh': i_kvhh_p, 
+                'kva': i_kva_p, 
+                'kvsi': i_kvsi_p, 
+                'kir': i_kir_p, 
+                'kca': i_kca_p, 
+                'ampar_out': i_ampar_out_p, 
+                'nmdar_out': i_nmdar_out_p, 
+                'gabar_out': i_gabar_out_p, 
+                'naleak': i_nal_p, 
+                'nav': i_nav_p, 
+                'cav': i_cav_p, 
+                'nap': i_nap_p,
+                'ampar_in': i_ampar_in_p, 
+                'nmdar_in': i_nmdar_in_p, 
+                'gabar_in': i_gabar_in_p, 
             }
             for j in range(len(e)-1):
                 tlst = np.linspace(e[j], e[j+1], 9, dtype=int)
@@ -245,10 +246,93 @@ class AN:
         with open(res_p/'gabar_in', 'rb') as f:
             self.gabar_in_hm = pickle.load(f)
 
+    def b_s_ratio(self, filename: str):
+        now = datetime.now()
+        date = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'b_s_ratio' / 'AN' / date
+        res_p.mkdir(parents=True, exist_ok=True)
+
+        data_p = p / 'results' / f'{self.wavepattern}_params' / 'AN' / filename
+        time_p = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_AN_time.pickle'
+        with open(data_p, 'rb') as f:
+            param_df = pickle.load(f)
+        with open(time_p, 'rb') as f:
+            time_df = pickle.load(f).dropna(how='all')
+        param_df.index = range(len(param_df))
+        time_df.index = range(len(time_df))
+        if len(param_df) != len(time_df):
+            raise Exception
+        
+        ch_lst = [
+            'kleak', 
+            'kvhh', 
+            'kva', 
+            'kvsi', 
+            'kir', 
+            'kca', 
+            'ampar_out', 
+            'nmdar_out', 
+            'gabar_out', 
+            'naleak', 
+            'nav', 
+            'cav', 
+            'nap',
+            'ampar_in', 
+            'nmdar_in', 
+            'gabar_in', 
+        ]
+        res_b_df = pd.DataFrame([], columns=ch_lst, index=param_df.index)
+        res_s_df = pd.DataFrame([], columns=ch_lst, index=param_df.index)
+        for idx in tqdm(param_df.index):
+            param = param_df.loc[idx, :]
+            self.set_params(param)
+            self.model.set_params(param)
+            e = time_df.loc[idx, :]
+            try:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+            except TypeError:
+                continue
+            s, _ = self.model.run_odeint(samp_len=samp_len)
+            v_sq = self.fs.square_wave(s[e[0]:e[6], 0], spike='bottom')
+            ip_out, ip_in = self.get_p(s[e[0]:e[6], :])
+            i_kl_p, i_kvhh_p, i_kva_p, i_kvsi_p, i_kir_p, i_kca_p, i_ampar_out_p, i_nmdar_out_p, i_gabar_out_p = ip_out
+            i_nal_p, i_nav_p, i_cav_p, i_nap_p, i_ampar_in_p, i_nmdar_in_p, i_gabar_in_p = ip_in
+            p_data_dic = {
+                'kleak': i_kl_p, 
+                'kvhh': i_kvhh_p, 
+                'kva': i_kva_p, 
+                'kvsi': i_kvsi_p, 
+                'kir': i_kir_p, 
+                'kca': i_kca_p, 
+                'ampar_out': i_ampar_out_p, 
+                'nmdar_out': i_nmdar_out_p, 
+                'gabar_out': i_gabar_out_p, 
+                'naleak': i_nal_p, 
+                'nav': i_nav_p, 
+                'cav': i_cav_p, 
+                'nap': i_nap_p,
+                'ampar_in': i_ampar_in_p, 
+                'nmdar_in': i_nmdar_in_p, 
+                'gabar_in': i_gabar_in_p, 
+            }
+            for ch in ch_lst:
+                cur_p = p_data_dic[ch]
+                cur_p_burst = cur_p[v_sq.astype(np.bool)]
+                cur_p_silent = cur_p[np.logical_not(v_sq.astype(np.bool))]
+                res_b_df.loc[idx, ch] = cur_p_burst.mean()
+                res_s_df.loc[idx, ch] = cur_p_silent.mean()
+        
+        with open(res_p/'burst.pickle', 'wb') as f:
+            pickle.dump(res_b_df, f)
+        with open(res_p/'silent.pickle', 'wb') as f:
+            pickle.dump(res_s_df, f)
+
 
 class SAN:
     def __init__(self, ion: bool=False, concentration: Dict=None) -> None:
         self.model = anmodel.models.SANmodel()
+        self.fs = anmodel.analysis.FreqSpike()
         self.wavepattern = 'SWS'
 
     def set_params(self, param: pd.Series) -> None:
@@ -299,7 +383,7 @@ class SAN:
         now = datetime.now()
         date = f'{now.year}_{now.month}_{now.day}'
         p: Path = Path.cwd().parents[0]
-        res_p = p / 'results' / 'current' / 'SAN' / date
+        res_p = p / 'results' / 'current' / 'p_heatmap' / 'SAN' / date
         res_p.mkdir(parents=True, exist_ok=True)
 
         data_p = p / 'results' / f'{self.wavepattern}_params' / 'SAN' / filename
@@ -368,11 +452,74 @@ class SAN:
         with open(res_p/'nap', 'rb') as f:
             self.nap_hm = pickle.load(f)
 
+    def b_s_ratio(self, filename: str):
+        now = datetime.now()
+        date = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'b_s_ratio' / 'SAN' / date
+        res_p.mkdir(parents=True, exist_ok=True)
+
+        data_p = p / 'results' / f'{self.wavepattern}_params' / 'SAN' / filename
+        time_p = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_SAN_time.pickle'
+        with open(data_p, 'rb') as f:
+            param_df = pickle.load(f)
+        with open(time_p, 'rb') as f:
+            time_df = pickle.load(f).dropna(how='all')
+        param_df.index = range(len(param_df))
+        time_df.index = range(len(time_df))
+        if len(param_df) != len(time_df):
+            raise Exception
+        
+        ch_lst = [
+            'kleak', 
+            'kvhh', 
+            'kca', 
+            'naleak', 
+            'cav', 
+            'nap',
+        ]
+        res_b_df = pd.DataFrame([], columns=ch_lst, index=param_df.index)
+        res_s_df = pd.DataFrame([], columns=ch_lst, index=param_df.index)
+        for idx in tqdm(param_df.index):
+            param = param_df.loc[idx, :]
+            self.set_params(param)
+            self.model.set_params(param)
+            e = time_df.loc[idx, :]
+            try:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+            except TypeError:
+                continue
+            s, _ = self.model.run_odeint(samp_len=samp_len)
+            v_sq = self.fs.square_wave(s[e[0]:e[6], 0], spike='bottom')
+            ip_out, ip_in = self.get_p(s[e[0]:e[6], :])
+            i_kl_p, i_kvhh_p, i_kca_p = ip_out
+            i_nal_p, i_cav_p, i_nap_p = ip_in
+            p_data_dic = {
+                'kleak': i_kl_p, 
+                'kvhh': i_kvhh_p, 
+                'kca': i_kca_p, 
+                'naleak': i_nal_p, 
+                'cav': i_cav_p, 
+                'nap': i_nap_p,
+            }
+            for ch in ch_lst:
+                cur_p = p_data_dic[ch]
+                cur_p_burst = cur_p[v_sq.astype(np.bool)]
+                cur_p_silent = cur_p[np.logical_not(v_sq.astype(np.bool))]
+                res_b_df.loc[idx, ch] = cur_p_burst.mean()
+                res_s_df.loc[idx, ch] = cur_p_silent.mean()
+        
+        with open(res_p/'burst.pickle', 'wb') as f:
+            pickle.dump(res_b_df, f)
+        with open(res_p/'silent.pickle', 'wb') as f:
+            pickle.dump(res_s_df, f)
+
 
 class RAN:
     def __init__(self, ion: bool=False, concentration: Dict=None) -> None:
         channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
         self.model = anmodel.models.Xmodel(channel_bool)
+        self.fs = anmodel.analysis.FreqSpike()
         self.wavepattern = 'SPN'
 
     def set_params(self, param: pd.Series) -> None:
@@ -423,7 +570,7 @@ class RAN:
         now = datetime.now()
         date = f'{now.year}_{now.month}_{now.day}'
         p: Path = Path.cwd().parents[0]
-        res_p = p / 'results' / 'current' / 'RAN' / date
+        res_p = p / 'results' / 'current' / 'p_heatmap' / 'RAN' / date
         res_p.mkdir(parents=True, exist_ok=True)
 
         data_p = p / 'results' / f'{self.wavepattern}_params' / 'RAN' / filename
@@ -492,6 +639,68 @@ class RAN:
         with open(res_p/'nap', 'rb') as f:
             self.nap_hm = pickle.load(f)
 
+    def b_s_ratio(self, filename: str):
+        now = datetime.now()
+        date = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'b_s_ratio' / 'RAN' / date
+        res_p.mkdir(parents=True, exist_ok=True)
+
+        data_p = p / 'results' / f'{self.wavepattern}_params' / 'RAN' / filename
+        time_p = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_RAN_time.pickle'
+        with open(data_p, 'rb') as f:
+            param_df = pickle.load(f)
+        with open(time_p, 'rb') as f:
+            time_df = pickle.load(f).dropna(how='all')
+        param_df.index = range(len(param_df))
+        time_df.index = range(len(time_df))
+        if len(param_df) != len(time_df):
+            raise Exception
+        
+        ch_lst = [
+            'kleak', 
+            'kvsi', 
+            'kca', 
+            'naleak', 
+            'cav', 
+            'nap',
+        ]
+        res_b_df = pd.DataFrame([], columns=ch_lst, index=param_df.index)
+        res_s_df = pd.DataFrame([], columns=ch_lst, index=param_df.index)
+        for idx in tqdm(param_df.index):
+            param = param_df.loc[idx, :]
+            self.set_params(param)
+            self.model.set_params(param)
+            e = time_df.loc[idx, :]
+            try:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+            except TypeError:
+                continue
+            s, _ = self.model.run_odeint(samp_len=samp_len)
+            v_sq = self.fs.square_wave(s[e[0]:e[6], 0], spike='bottom')
+            ip_out, ip_in = self.get_p(s[e[0]:e[6], :])
+            i_kl_p, i_kvsi_p, i_kca_p = ip_out
+            i_nal_p, i_cav_p, i_nap_p = ip_in
+            p_data_dic = {
+                'kleak': i_kl_p, 
+                'kvsi': i_kvsi_p, 
+                'kca': i_kca_p, 
+                'naleak': i_nal_p, 
+                'cav': i_cav_p, 
+                'nap': i_nap_p,
+            }
+            for ch in ch_lst:
+                cur_p = p_data_dic[ch]
+                cur_p_burst = cur_p[v_sq.astype(np.bool)]
+                cur_p_silent = cur_p[np.logical_not(v_sq.astype(np.bool))]
+                res_b_df.loc[idx, ch] = cur_p_burst.mean()
+                res_s_df.loc[idx, ch] = cur_p_silent.mean()
+        
+        with open(res_p/'burst.pickle', 'wb') as f:
+            pickle.dump(res_b_df, f)
+        with open(res_p/'silent.pickle', 'wb') as f:
+            pickle.dump(res_s_df, f)
+
 
 if __name__ == '__main__':
     arg: List = sys.argv
@@ -506,3 +715,10 @@ if __name__ == '__main__':
             analysistools.current.SAN().p_heatmap(filename)
         elif model == 'RAN':
             analysistools.current.RAN().p_heatmap(filename)
+    elif method == 'b_s_ratio':
+        if model == 'AN':
+            analysistools.current.AN(wavepattern=wavepattern).p_heatmap(filename)
+        # elif model == 'SAN':
+        #     analysistools.current.SAN().p_heatmap(filename)
+        elif model == 'RAN':
+            analysistools.current.RAN().b_s_ratio(filename)

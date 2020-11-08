@@ -212,7 +212,7 @@ class AN:
 
     def load_p_heatmap(self, date):
         p: Path = Path.cwd().parents[0]
-        res_p = p / 'results' / 'current' / 'AN' / date
+        res_p = p / 'results' / 'current' / 'p_heatmap' / 'AN' / f'{date}_{self.wavepattern}'
         with open(res_p/'kleak.pickle', 'rb') as f:
             self.kl_hm = pickle.load(f)
         with open(res_p/'kvhh.pickle', 'rb') as f:
@@ -250,7 +250,7 @@ class AN:
         now = datetime.now()
         date = f'{now.year}_{now.month}_{now.day}'
         p: Path = Path.cwd().parents[0]
-        res_p = p / 'results' / 'current' / 'b_s_ratio' / 'AN' / date
+        res_p = p / 'results' / 'current' / 'b_s_ratio' / 'AN' / f'{date}_{self.wavepattern}'
         res_p.mkdir(parents=True, exist_ok=True)
 
         data_p = p / 'results' / f'{self.wavepattern}_params' / 'AN' / filename
@@ -332,6 +332,24 @@ class AN:
             pickle.dump(res_b_df, f)
         with open(res_p/'silent.pickle', 'wb') as f:
             pickle.dump(res_s_df, f)
+
+    def load_b_s_ratio(self, date):
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'b_s_ratio' / 'AN' / f'{date}_{self.wavepattern}'
+        with open(res_p/'burst.pickle', 'rb') as f:
+            self.burst_ratio = pickle.load(f)
+        with open(res_p/'silent.pickle', 'rb') as f:
+            self.silent_ratio = pickle.load(f)
+        out_ch = ['kleak', 'kvhh', 'kva', 'kvsi', 'kir', 'kca', 
+                  'ampar_out', 'nmdar_out', 'gabar_out']
+        in_ch = ['naleak', 'nav', 'cav', 'nap',
+                 'ampar_in', 'nmdar_in', 'gabar_in', ]
+        self.b_out = pd.DataFrame(self.burst_ratio.loc[:, out_ch].stack()).reset_index()
+        self.b_in = pd.DataFrame(self.burst_ratio.loc[:, in_ch].stack()).reset_index()
+        self.s_out = pd.DataFrame(self.silent_ratio.loc[:, out_ch].stack()).reset_index()
+        self.s_in = pd.DataFrame(self.silent_ratio.loc[:, in_ch].stack()).reset_index()
+        for bs_df in [self.b_out, self.b_in, self.s_out, self.s_in]:
+            bs_df.columns = ['param_index', 'channel', 'value']
 
 
 class SAN:
@@ -443,7 +461,7 @@ class SAN:
 
     def load_p_heatmap(self, date):
         p: Path = Path.cwd().parents[0]
-        res_p = p / 'results' / 'current' / 'SAN' / date
+        res_p = p / 'results' / 'current' / 'p_heatmap' / 'SAN' / date
         with open(res_p/'kleak.pickle', 'rb') as f:
             self.kl_hm = pickle.load(f)
         with open(res_p/'kvhh.pickle', 'rb') as f:
@@ -518,6 +536,23 @@ class SAN:
             pickle.dump(res_b_df, f)
         with open(res_p/'silent.pickle', 'wb') as f:
             pickle.dump(res_s_df, f)
+
+    def load_b_s_ratio(self, date):
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'b_s_ratio' / 'SAN' / date
+        with open(res_p/'burst.pickle', 'rb') as f:
+            self.burst_ratio = pickle.load(f)
+        with open(res_p/'silent.pickle', 'rb') as f:
+            self.silent_ratio = pickle.load(f)
+        out_ch = ['kleak', 'kvhh', 'kca']
+        in_ch = ['naleak', 'cav', 'nap']
+        self.b_out = pd.DataFrame(self.burst_ratio.loc[:, out_ch].stack()).reset_index()
+        self.b_in = pd.DataFrame(self.burst_ratio.loc[:, in_ch].stack()).reset_index()
+        self.s_out = pd.DataFrame(self.silent_ratio.loc[:, out_ch].stack()).reset_index()
+        self.s_in = pd.DataFrame(self.silent_ratio.loc[:, in_ch].stack()).reset_index()
+        for bs_df in [self.b_out, self.b_in, self.s_out, self.s_in]:
+            bs_df.columns = ['param_index', 'channel', 'value']
+            bs_df.replace('kvhh', 'kvsi/kvhh', inplace=True)
 
 
 class RAN:
@@ -630,7 +665,7 @@ class RAN:
 
     def load_p_heatmap(self, date):
         p: Path = Path.cwd().parents[0]
-        res_p = p / 'results' / 'current' / 'RAN' / date
+        res_p = p / 'results' / 'current' / 'p_heatmap' / 'RAN' / date
         with open(res_p/'kleak.pickle', 'rb') as f:
             self.kl_hm = pickle.load(f)
         with open(res_p/'kvsi.pickle', 'rb') as f:
@@ -705,6 +740,23 @@ class RAN:
             pickle.dump(res_b_df, f)
         with open(res_p/'silent.pickle', 'wb') as f:
             pickle.dump(res_s_df, f)
+
+    def load_b_s_ratio(self, date):
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'b_s_ratio' / 'RAN' / date
+        with open(res_p/'burst.pickle', 'rb') as f:
+            self.burst_ratio = pickle.load(f)
+        with open(res_p/'silent.pickle', 'rb') as f:
+            self.silent_ratio = pickle.load(f)
+        out_ch = ['kleak', 'kvsi', 'kca']
+        in_ch = ['naleak', 'cav', 'nap']
+        self.b_out = pd.DataFrame(self.burst_ratio.loc[:, out_ch].stack()).reset_index()
+        self.b_in = pd.DataFrame(self.burst_ratio.loc[:, in_ch].stack()).reset_index()
+        self.s_out = pd.DataFrame(self.silent_ratio.loc[:, out_ch].stack()).reset_index()
+        self.s_in = pd.DataFrame(self.silent_ratio.loc[:, in_ch].stack()).reset_index()
+        for bs_df in [self.b_out, self.b_in, self.s_out, self.s_in]:
+            bs_df.columns = ['param_index', 'channel', 'value']
+            bs_df.replace('kvsi', 'kvsi/kvhh', inplace=True)
 
 
 if __name__ == '__main__':

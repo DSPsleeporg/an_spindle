@@ -281,7 +281,7 @@ class FreqSpike:
                 burstidx.append(idx)
         return burst_events, burstidx, ave_spike_per_burst, num_burst
         
-    def square_wave(self, v: np.ndarray, spike: str='peak') -> np.ndarray:
+    def square_wave(self, v: np.ndarray, spike: str) -> np.ndarray:
         """ approximate firing pattern of the given parameter set into square wave.
 
         Parameters

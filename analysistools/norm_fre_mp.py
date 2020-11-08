@@ -41,7 +41,7 @@ import analysistools
 
 
 class Normalization:
-    def __init__(self, model: str='AN', wavepattern: str='SPN', 
+    def __init__(self, model: str='AN', wavepattern: str=None, 
                  channel_bool: Optional[Dict]=None, 
                  model_name: Optional[str]=None, 
                  ion: bool=False, concentration: Dict=None)-> None:
@@ -68,10 +68,14 @@ class Normalization:
         if self.model == 'AN':
             self.model_name = 'AN'
             self.model = anmodel.models.ANmodel(ion, concentration)
-        if self.model == 'SAN':
+        elif self.model == 'SAN':
             self.model_name = 'SAN'
             self.model = anmodel.models.SANmodel(ion, concentration)
-        if self.model == "X":
+        elif self.model == 'RAN':
+            self.model_name = 'RAN'
+            ran_bool = [1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1]
+            self.model = anmodel.models.Xmodel(channel_bool=ran_bool, ion=ion, concentration=concentration)
+        elif self.model == "X":
             if channel_bool is None:
                 raise TypeError('Designate channel in argument of X model.')
             self.model_name = model_name
@@ -438,6 +442,98 @@ class Normalization:
                 print(f'Now i={i}, and pickled')
         with open(res_p/resname, 'wb') as f:
             pickle.dump(res_df, f)
+
+    def load_time_bifurcation_all(self, dataname: str, diff: float=0.025):
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'normalization_mp_ca' / 'bifurcation_all' / f'{self.model_name}'
+        magnif_u = 1 + diff
+        magnif_d = 1 - diff
+
+        if self.wavepattern == 'SWS':
+            with open(res_p/f'{dataname}_g_kvhh_1.0_time.pickle', 'rb') as f:
+                self.norm_t = pickle.load(f)
+                self.norm_fr = 1000 / self.norm_t.dropna().diff(axis=1).mean(axis=1)
+        elif self.wavepattern == 'SPN':
+            with open(res_p/f'{dataname}_g_kvsi_1.0_time.pickle', 'rb') as f:
+                self.norm_t = pickle.load(f)
+                self.norm_fr = 1000 / self.norm_t.dropna().diff(axis=1).mean(axis=1)
+
+        with open(res_p/f'{dataname}_g_kleak_{magnif_u}_time.pickle', 'rb') as f:
+            self.kl_t_u = pickle.load(f)
+            self.kl_fr_u = 1000 / self.kl_t_u.dropna().diff(axis=1).mean(axis=1)
+        with open(res_p/f'{dataname}_g_kleak_{magnif_d}_time.pickle', 'rb') as f:
+            self.kl_t_d = pickle.load(f)
+            self.kl_fr_d = 1000 / self.kl_t_d.dropna().diff(axis=1).mean(axis=1)
+        with open(res_p/f'{dataname}_g_kca_{magnif_u}_time.pickle', 'rb') as f:
+            self.kca_t_u = pickle.load(f)
+            self.kca_fr_u = 1000 / self.kca_t_u.dropna().diff(axis=1).mean(axis=1)
+        with open(res_p/f'{dataname}_g_kca_{magnif_d}_time.pickle', 'rb') as f:
+            self.kca_t_d = pickle.load(f)
+            self.kca_fr_d = 1000 / self.kca_t_d.dropna().diff(axis=1).mean(axis=1)
+        with open(res_p/f'{dataname}_g_naleak_{magnif_u}_time.pickle', 'rb') as f:
+            self.nal_t_u = pickle.load(f)
+            self.nal_fr_u = 1000 / self.nal_t_u.dropna().diff(axis=1).mean(axis=1)
+        with open(res_p/f'{dataname}_g_naleak_{magnif_d}_time.pickle', 'rb') as f:
+            self.nal_t_d = pickle.load(f)
+            self.nal_fr_d = 1000 / self.nal_t_d.dropna().diff(axis=1).mean(axis=1)
+        with open(res_p/f'{dataname}_g_nap_{magnif_u}_time.pickle', 'rb') as f:
+            self.nap_t_u = pickle.load(f)
+            self.nap_fr_u = 1000 / self.nap_t_u.dropna().diff(axis=1).mean(axis=1)
+        with open(res_p/f'{dataname}_g_nap_{magnif_d}_time.pickle', 'rb') as f:
+            self.nap_t_d = pickle.load(f)
+            self.nap_fr_d = 1000 / self.nap_t_d.dropna().diff(axis=1).mean(axis=1)
+        with open(res_p/f'{dataname}_g_cav_{magnif_u}_time.pickle', 'rb') as f:
+            self.cav_t_u = pickle.load(f)
+            self.cav_fr_u = 1000 / self.cav_t_u.dropna().diff(axis=1).mean(axis=1)
+        with open(res_p/f'{dataname}_g_cav_{magnif_d}_time.pickle', 'rb') as f:
+            self.cav_t_d = pickle.load(f)
+            self.cav_fr_d = 1000 / self.cav_t_d.dropna().diff(axis=1).mean(axis=1)
+        with open(res_p/f'{dataname}_t_ca_{magnif_u}_time.pickle', 'rb') as f:
+            self.tca_t_u = pickle.load(f)
+            self.tca_fr_u = 1000 / self.tca_t_u.dropna().diff(axis=1).mean(axis=1)
+        with open(res_p/f'{dataname}_t_ca_{magnif_d}_time.pickle', 'rb') as f:
+            self.tca_t_d = pickle.load(f)
+            self.tca_fr_d = 1000 / self.tca_t_d.dropna().diff(axis=1).mean(axis=1)
+
+        if self.model_name == 'AN':
+            with open(res_p/f'{dataname}_g_kvhh_{magnif_u}_time.pickle', 'rb') as f:
+                self.kvhh_t_u = pickle.load(f)
+                self.kvhh_fr_d = 1000 / self.kvhh_t_u.dropna().diff(axis=1).mean(axis=1)
+            with open(res_p/f'{dataname}_g_kvhh_{magnif_d}_time.pickle', 'rb') as f:
+                self.kvhh_t_d = pickle.load(f)
+                self.kvhh_fr_d = 1000 / self.kvhh_t_d.dropna().diff(axis=1).mean(axis=1)
+            with open(res_p/f'{dataname}_g_kvsi_{magnif_u}_time.pickle', 'rb') as f:
+                self.kvsi_t_u = pickle.load(f)
+                self.kvsi_fr_u = 1000 / self.kvsi_t_u.dropna().diff(axis=1).mean(axis=1)
+            with open(res_p/f'{dataname}_g_kvsi_{magnif_d}_time.pickle', 'rb') as f:
+                self.kvsi_t_d = pickle.load(f)
+                self.kvsi_fr_d = 1000 / self.kvsi_t_d.dropna().diff(axis=1).mean(axis=1)
+            with open(res_p/f'{dataname}_g_kva_{magnif_u}_time.pickle', 'rb') as f:
+                self.kva_t_u = pickle.load(f)
+                self.kva_fr_u = 1000 / self.kva_t_u.dropna().diff(axis=1).mean(axis=1)
+            with open(res_p/f'{dataname}_g_kva_{magnif_d}_time.pickle', 'rb') as f:
+                self.kva_t_d = pickle.load(f)
+                self.kva_fr_d = 1000 / self.kva_t_d.dropna().diff(axis=1).mean(axis=1)
+            with open(res_p/f'{dataname}_g_kir_{magnif_u}_time.pickle', 'rb') as f:
+                self.kir_t_u = pickle.load(f)
+                self.kir_fr_u = 1000 / self.kir_t_u.dropna().diff(axis=1).mean(axis=1)
+            with open(res_p/f'{dataname}_g_kir_{magnif_d}_time.pickle', 'rb') as f:
+                self.kir_t_d = pickle.load(f)
+                self.kir_fr_d = 1000 / self.kir_t_d.dropna().diff(axis=1).mean(axis=1)
+        elif self.model_name == 'SAN':
+            with open(res_p/f'{dataname}_g_kvhh_{magnif_u}_time.pickle', 'rb') as f:
+                self.kvhh_t_u = pickle.load(f)
+                self.kvhh_fr_u = 1000 / self.kvhh_t_u.dropna().diff(axis=1).mean(axis=1)
+            with open(res_p/f'{dataname}_g_kvhh_{magnif_d}_time.pickle', 'rb') as f:
+                self.kvhh_t_d = pickle.load(f)
+                self.kvhh_fr_d = 1000 / self.kvhh_t_d.dropna().diff(axis=1).mean(axis=1)
+        elif self.model_name == 'RAN':
+            with open(res_p/f'{dataname}_g_kvsi_{magnif_u}_time.pickle', 'rb') as f:
+                self.kvsi_t_u = pickle.load(f)
+                self.kvsi_fr_u = 1000 / self.kvsi_t_u.dropna().diff(axis=1).mean(axis=1)
+            with open(res_p/f'{dataname}_g_kvsi_{magnif_d}_time.pickle', 'rb') as f:
+                self.kvsi_t_d = pickle.load(f)
+                self.kvsi_fr_d = 1000 / self.kvsi_t_d.dropna().diff(axis=1).mean(axis=1)
 
 
 if __name__ == '__main__':

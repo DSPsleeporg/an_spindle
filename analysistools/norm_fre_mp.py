@@ -233,8 +233,6 @@ class Normalization:
         List[int]
             the index (time (ms)) of the 1st~6th ends of burst firing
         """
-        # print(param)
-        # print(param.drop(['g_kl', 'g_nal']))
         self.model.set_params(param.drop(['g_kl', 'g_nal']))
         if channel != 'g_nal' and channel != 'g_kl' and channel2 != 'g_nal' and channel2 != 'g_kl':
             self.model.leak.reset_div()

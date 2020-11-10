@@ -460,80 +460,163 @@ class Normalization:
 
         with open(res_p/f'{dataname}_g_kleak_{magnif_u}_time.pickle', 'rb') as f:
             self.kl_t_u = pickle.load(f)
-            self.kl_fr_u = 1000 / self.kl_t_u.dropna().diff(axis=1).mean(axis=1)
+            self.kl_fr_u = 1000 / self.kl_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
         with open(res_p/f'{dataname}_g_kleak_{magnif_d}_time.pickle', 'rb') as f:
             self.kl_t_d = pickle.load(f)
-            self.kl_fr_d = 1000 / self.kl_t_d.dropna().diff(axis=1).mean(axis=1)
+            self.kl_fr_d = 1000 / self.kl_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
         with open(res_p/f'{dataname}_g_kca_{magnif_u}_time.pickle', 'rb') as f:
             self.kca_t_u = pickle.load(f)
-            self.kca_fr_u = 1000 / self.kca_t_u.dropna().diff(axis=1).mean(axis=1)
+            self.kca_fr_u = 1000 / self.kca_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
         with open(res_p/f'{dataname}_g_kca_{magnif_d}_time.pickle', 'rb') as f:
             self.kca_t_d = pickle.load(f)
-            self.kca_fr_d = 1000 / self.kca_t_d.dropna().diff(axis=1).mean(axis=1)
+            self.kca_fr_d = 1000 / self.kca_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
         with open(res_p/f'{dataname}_g_naleak_{magnif_u}_time.pickle', 'rb') as f:
             self.nal_t_u = pickle.load(f)
-            self.nal_fr_u = 1000 / self.nal_t_u.dropna().diff(axis=1).mean(axis=1)
+            self.nal_fr_u = 1000 / self.nal_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
         with open(res_p/f'{dataname}_g_naleak_{magnif_d}_time.pickle', 'rb') as f:
             self.nal_t_d = pickle.load(f)
-            self.nal_fr_d = 1000 / self.nal_t_d.dropna().diff(axis=1).mean(axis=1)
+            self.nal_fr_d = 1000 / self.nal_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
         with open(res_p/f'{dataname}_g_nap_{magnif_u}_time.pickle', 'rb') as f:
             self.nap_t_u = pickle.load(f)
-            self.nap_fr_u = 1000 / self.nap_t_u.dropna().diff(axis=1).mean(axis=1)
+            self.nap_fr_u = 1000 / self.nap_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
         with open(res_p/f'{dataname}_g_nap_{magnif_d}_time.pickle', 'rb') as f:
             self.nap_t_d = pickle.load(f)
-            self.nap_fr_d = 1000 / self.nap_t_d.dropna().diff(axis=1).mean(axis=1)
+            self.nap_fr_d = 1000 / self.nap_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
         with open(res_p/f'{dataname}_g_cav_{magnif_u}_time.pickle', 'rb') as f:
             self.cav_t_u = pickle.load(f)
-            self.cav_fr_u = 1000 / self.cav_t_u.dropna().diff(axis=1).mean(axis=1)
+            self.cav_fr_u = 1000 / self.cav_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
         with open(res_p/f'{dataname}_g_cav_{magnif_d}_time.pickle', 'rb') as f:
             self.cav_t_d = pickle.load(f)
-            self.cav_fr_d = 1000 / self.cav_t_d.dropna().diff(axis=1).mean(axis=1)
+            self.cav_fr_d = 1000 / self.cav_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
         with open(res_p/f'{dataname}_t_ca_{magnif_u}_time.pickle', 'rb') as f:
             self.tca_t_u = pickle.load(f)
-            self.tca_fr_u = 1000 / self.tca_t_u.dropna().diff(axis=1).mean(axis=1)
+            self.tca_fr_u = 1000 / self.tca_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
         with open(res_p/f'{dataname}_t_ca_{magnif_d}_time.pickle', 'rb') as f:
             self.tca_t_d = pickle.load(f)
-            self.tca_fr_d = 1000 / self.tca_t_d.dropna().diff(axis=1).mean(axis=1)
+            self.tca_fr_d = 1000 / self.tca_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+        data_dic = {
+            'kleak': [self.kl_fr_u, self.kl_fr_d], 
+            'kca': [self.kca_fr_u, self.kca_fr_d], 
+            'naleak': [self.nal_fr_u, self.nal_fr_d], 
+            'cav': [self.cav_fr_u, self.cav_fr_d], 
+            'nap': [self.nap_fr_u, self.nap_fr_d], 
+            'tca': [self.tca_fr_u, self.tca_fr_d], 
+        }
 
         if self.model_name == 'AN':
+            with open(res_p/f'{dataname}_g_nav_{magnif_u}_time.pickle', 'rb') as f:
+                self.nav_t_u = pickle.load(f)
+                self.nav_fr_u = 1000 / self.nav_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+            with open(res_p/f'{dataname}_g_nav_{magnif_d}_time.pickle', 'rb') as f:
+                self.nav_t_d = pickle.load(f)
+                self.nav_fr_d = 1000 / self.nav_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
             with open(res_p/f'{dataname}_g_kvhh_{magnif_u}_time.pickle', 'rb') as f:
                 self.kvhh_t_u = pickle.load(f)
-                self.kvhh_fr_d = 1000 / self.kvhh_t_u.dropna().diff(axis=1).mean(axis=1)
+                self.kvhh_fr_u = 1000 / self.kvhh_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
             with open(res_p/f'{dataname}_g_kvhh_{magnif_d}_time.pickle', 'rb') as f:
                 self.kvhh_t_d = pickle.load(f)
-                self.kvhh_fr_d = 1000 / self.kvhh_t_d.dropna().diff(axis=1).mean(axis=1)
+                self.kvhh_fr_d = 1000 / self.kvhh_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
             with open(res_p/f'{dataname}_g_kvsi_{magnif_u}_time.pickle', 'rb') as f:
                 self.kvsi_t_u = pickle.load(f)
-                self.kvsi_fr_u = 1000 / self.kvsi_t_u.dropna().diff(axis=1).mean(axis=1)
+                self.kvsi_fr_u = 1000 / self.kvsi_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
             with open(res_p/f'{dataname}_g_kvsi_{magnif_d}_time.pickle', 'rb') as f:
                 self.kvsi_t_d = pickle.load(f)
-                self.kvsi_fr_d = 1000 / self.kvsi_t_d.dropna().diff(axis=1).mean(axis=1)
+                self.kvsi_fr_d = 1000 / self.kvsi_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
             with open(res_p/f'{dataname}_g_kva_{magnif_u}_time.pickle', 'rb') as f:
                 self.kva_t_u = pickle.load(f)
-                self.kva_fr_u = 1000 / self.kva_t_u.dropna().diff(axis=1).mean(axis=1)
+                self.kva_fr_u = 1000 / self.kva_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
             with open(res_p/f'{dataname}_g_kva_{magnif_d}_time.pickle', 'rb') as f:
                 self.kva_t_d = pickle.load(f)
-                self.kva_fr_d = 1000 / self.kva_t_d.dropna().diff(axis=1).mean(axis=1)
+                self.kva_fr_d = 1000 / self.kva_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
             with open(res_p/f'{dataname}_g_kir_{magnif_u}_time.pickle', 'rb') as f:
                 self.kir_t_u = pickle.load(f)
-                self.kir_fr_u = 1000 / self.kir_t_u.dropna().diff(axis=1).mean(axis=1)
+                self.kir_fr_u = 1000 / self.kir_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
             with open(res_p/f'{dataname}_g_kir_{magnif_d}_time.pickle', 'rb') as f:
                 self.kir_t_d = pickle.load(f)
-                self.kir_fr_d = 1000 / self.kir_t_d.dropna().diff(axis=1).mean(axis=1)
+                self.kir_fr_d = 1000 / self.kir_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+            with open(res_p/f'{dataname}_g_ampar_{magnif_u}_time.pickle', 'rb') as f:
+                self.ampar_t_u = pickle.load(f)
+                self.ampar_fr_u = 1000 / self.ampar_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+            with open(res_p/f'{dataname}_g_ampar_{magnif_d}_time.pickle', 'rb') as f:
+                self.ampar_t_d = pickle.load(f)
+                self.ampar_fr_d = 1000 / self.ampar_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+            with open(res_p/f'{dataname}_g_nmdar_{magnif_u}_time.pickle', 'rb') as f:
+                self.nmdar_t_u = pickle.load(f)
+                self.nmdar_fr_u = 1000 / self.nmdar_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+            with open(res_p/f'{dataname}_g_nmdar_{magnif_d}_time.pickle', 'rb') as f:
+                self.nmdar_t_d = pickle.load(f)
+                self.nmdar_fr_d = 1000 / self.nmdar_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+            with open(res_p/f'{dataname}_g_gabar_{magnif_u}_time.pickle', 'rb') as f:
+                self.gabar_t_u = pickle.load(f)
+                self.gabar_fr_u = 1000 / self.gabar_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+            with open(res_p/f'{dataname}_g_gabar_{magnif_d}_time.pickle', 'rb') as f:
+                self.gabar_t_d = pickle.load(f)
+                self.gabar_fr_d = 1000 / self.gabar_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+            data_dic['nav'] = [self.nav_fr_u, self.nav_fr_d]
+            data_dic['kvhh'] = [self.kvhh_fr_u, self.kvhh_fr_d]
+            data_dic['kvsi'] = [self.kvsi_fr_u, self.kvsi_fr_d]
+            data_dic['kva'] = [self.kva_fr_u, self.kva_fr_d]
+            data_dic['kir'] = [self.kir_fr_u, self.kir_fr_d]
+            data_dic['ampar'] = [self.ampar_fr_u, self.ampar_fr_d]
+            data_dic['nmdar'] = [self.nmdar_fr_u, self.nmdar_fr_d]
+            data_dic['gabar'] = [self.gabar_fr_u, self.gabar_fr_d]
         elif self.model_name == 'SAN':
             with open(res_p/f'{dataname}_g_kvhh_{magnif_u}_time.pickle', 'rb') as f:
                 self.kvhh_t_u = pickle.load(f)
-                self.kvhh_fr_u = 1000 / self.kvhh_t_u.dropna().diff(axis=1).mean(axis=1)
+                self.kvhh_fr_u = 1000 / self.kvhh_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
             with open(res_p/f'{dataname}_g_kvhh_{magnif_d}_time.pickle', 'rb') as f:
                 self.kvhh_t_d = pickle.load(f)
-                self.kvhh_fr_d = 1000 / self.kvhh_t_d.dropna().diff(axis=1).mean(axis=1)
+                self.kvhh_fr_d = 1000 / self.kvhh_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+            data_dic['kvhh'] = [self.kvhh_fr_u, self.kvhh_fr_d]
         elif self.model_name == 'RAN':
             with open(res_p/f'{dataname}_g_kvsi_{magnif_u}_time.pickle', 'rb') as f:
                 self.kvsi_t_u = pickle.load(f)
-                self.kvsi_fr_u = 1000 / self.kvsi_t_u.dropna().diff(axis=1).mean(axis=1)
+                self.kvsi_fr_u = 1000 / self.kvsi_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
             with open(res_p/f'{dataname}_g_kvsi_{magnif_d}_time.pickle', 'rb') as f:
                 self.kvsi_t_d = pickle.load(f)
-                self.kvsi_fr_d = 1000 / self.kvsi_t_d.dropna().diff(axis=1).mean(axis=1)
+                self.kvsi_fr_d = 1000 / self.kvsi_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+            data_dic['kvsi'] = [self.kvsi_fr_u, self.kvsi_fr_d]
+
+        len_data = len(self.norm_fr)
+        self.n_df = pd.DataFrame(index=data_dic.keys(), columns=['inc', 'dec'])
+        self.diff_df = pd.DataFrame(index=data_dic.keys(), columns=['inc', 'dec'])
+        self.diff_sig = pd.DataFrame(index=data_dic.keys(), columns=['inc', 'dec'])
+        for ch in data_dic.keys():
+            n_inc = 0
+            n_dec = 0
+            avg_inc = 0
+            avg_dec = 0
+            var_inc = 0
+            var_dec = 0
+            fr_u, fr_d = data_dic[ch]
+            sh_idx = np.intersect1d(fr_u.dropna().index, fr_d.dropna().index)
+            sh_idx = sh_idx.astype(int)
+            for idx in sh_idx:
+                if fr_d[idx] < 0.1 or fr_u[idx] > 2.0:
+                    pass
+                elif fr_d[idx] < 0.975 and fr_u[idx] > 1.025:
+                    n_inc += 1
+                    diff = fr_u[idx] - fr_d[idx]
+                    avg_inc_min1 = copy(avg_inc)
+                    avg_inc += (diff - avg_inc) / n_inc
+                    var_inc += (diff - avg_inc_min1) * (diff - avg_inc)
+                elif fr_d[idx] > 1.025 and fr_u[idx] < 0.975:
+                    n_dec += 1
+                    diff = fr_u[idx] - fr_d[idx]
+                    avg_dec_min1 = copy(avg_dec)
+                    avg_dec += (diff-avg_dec) / n_dec
+                    var_dec += (diff - avg_dec_min1) * (diff - avg_dec_min1)
+                else:
+                    pass
+            self.n_df.loc[ch] = [n_inc/len_data, n_dec/len_data]
+            self.diff_df.loc[ch] = [avg_inc, avg_dec]
+            self.diff_sig.loc[ch] = [np.sqrt(var_inc/(len_data-1)), np.sqrt(var_dec/(len_data-1))]
+        self.n_df = pd.DataFrame(self.n_df.stack().reset_index())
+        self.diff_df = pd.DataFrame(self.diff_df.stack().reset_index())
+        self.diff_sig = pd.DataFrame(self.diff_sig.stack().reset_index())
+        self.n_df.columns = ['channel', 'inc/dec', 'value']
+        self.diff_df.columns = ['channel', 'inc/dec', 'value']
+        self.diff_sig.columns = ['channel', 'inc/dec', 'value']
 
 
 if __name__ == '__main__':

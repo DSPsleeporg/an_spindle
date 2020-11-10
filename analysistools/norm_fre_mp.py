@@ -164,7 +164,6 @@ class Normalization:
 
     def norm_sws(self, param: pd.Series, 
                  gl: float=None, gl_name: str = None, 
-                 gl2: float=None, gl2_name: str=None, 
                  samp_len: int=10) -> List[int]:
         """ Normalize frequency of burst firing in SWS firing pattern.
 
@@ -210,13 +209,11 @@ class Normalization:
             return e[:7]
         else:
             if samp_len <= 20:
-                self.norm_spn(param=param, samp_len=samp_len+10)
+                self.norm_sws(param=param, samp_len=samp_len+10)
             else:
                 return [None] * 7
 
-    def norm_spn(self, param: pd.Series, 
-                 gl: float=None, gl_name: str = None, 
-                 gl2: float=None, gl2_name: str=None, 
+    def norm_spn(self, param: pd.Series, channel, channel2=None, 
                  samp_len: int=10) -> List[int]:
         """ Normalize frequency of burst firing in SPN firing pattern.
 
@@ -237,16 +234,11 @@ class Normalization:
             the index (time (ms)) of the 1st~6th ends of burst firing
         """
         self.model.set_params(param)
-        if gl_name == 'k':
-            self.model.leak.set_gk(gl)
-        elif gl_name == 'na':
-            self.model.leak.set_gna(gl)
-
-        if gl2 is not None:
-            if gl_name == 'k':
-                self.model.leak.set_gk(gl2)
-            elif gl_name == 'na':
-                self.model.leak.set_gna(gl2)
+        if channel != 'g_nal' and channel != 'g_kl' and channel2 != 'g_nal' and channel2 != 'g_kl':
+            self.model.leak.reset_div()
+        else:
+            self.model.leak.set_gk(param['g_kl'])
+            self.model.leak.set_gnal(param['g_nal'])
 
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
@@ -389,17 +381,21 @@ class Normalization:
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
+        self.model.set_params(param)
+        self.model.leak.set_div()
+        param.loc['g_nal'] = self.model.leak.gnal
+        param.loc['g_kl'] = self.model.leak.gkl
 
         start = 1000 - diff
         end = 1000 + diff + 1
         res_df = pd.DataFrame([], columns=range(7), index=np.arange(start, end))
-        param_c = copy(param)
         for i in tqdm(res_df.index):
-            param_c, g, gl_name = self.param_change(param_c, channel, i)
+            param_c = copy(param)
+            param_c[channel] = param_c[channel] * i / 1000
             if self.wavepattern == 'SWS':
-                res_df.loc[i, :] = self.norm_sws(param_c, g, gl_name)
+                res_df.loc[i, :] = self.norm_sws(param_c, channel)
             elif self.wavepattern == 'SPN':
-                res_df.loc[i, :] = self.norm_spn(param_c, g, gl_name)
+                res_df.loc[i, :] = self.norm_spn(param_c, channel)
             else:
                 raise NameError(f'Wavepattern {self.wavepattern} is unvalid.')
 
@@ -414,19 +410,20 @@ class Normalization:
     def two_bifur_singleprocess(self, args) -> None:
         core, param_lst, r_df, channel1, channel2, res_p, resname = args
         for p_lst in param_lst:
-            m, param_c1, g1, gl1_name = p_lst
+            m, param_c = p_lst
             r_name = f'{resname}_{m}.pickle'
-            param_c2 = copy(param_c1)
             for i in tqdm(r_df.columns):
-                param_c2, g2, gl2_name = self.param_change(param_c1, channel2, i)
+                param_cc = copy(param_c)
+                param_cc[channel2] = param_cc[channel2] * i/1000
                 if self.wavepattern == 'SWS':
-                    try:
-                        r_df.loc[m, i] = 1000 / np.diff(self.norm_sws(param_c2, g1, gl1_name, g2, gl2_name)).mean()
-                    except:
-                        r_df.loc[m, i] = None
+                    # try:
+                    #     r_df.loc[m, i] = 1000 / np.diff(self.norm_sws(param_cc, channel2, channel1)).mean()
+                    # except:
+                    #     r_df.loc[m, i] = None
+                    pass
                 elif self.wavepattern == 'SPN':
                     try:
-                        r_df.loc[m, i] = 1000 / np.diff(self.norm_spn(param_c2, g1, gl1_name, g2, gl2_name)).mean()
+                        r_df.loc[m, i] = 1000 / np.diff(self.norm_spn(param=param_cc, channel1=channel1, channel2=channel2)).mean()
                     except:
                         r_df.loc[m, i] = None
                 else:
@@ -442,6 +439,10 @@ class Normalization:
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
+        self.model.set_params(param)
+        self.model.leak.set_div()
+        param.loc['g_nal'] = self.model.leak.gnal
+        param.loc['g_kl'] = self.model.leak.gkl
 
         start = 1000 - diff
         end = 1000 + diff + 1
@@ -453,10 +454,10 @@ class Normalization:
         args: List = []
         for core, m_lst in enumerate(np.array_split(magnif_lst, ncore)):
             param_lst = []
-            param_c = copy(param)
             for m in m_lst:
-                param_c1, g1, gl1_name = self.param_change(param_c, channel1, m)
-                param_lst.append([m, param_c1, g1, gl1_name])
+                param_c = copy(param)
+                param_c[channel1] = param_c[channel1] * m/1000
+                param_lst.append([m, param_c])
             r_df = res_df.loc[m_lst, :]
             args.append((core, param_lst, r_df, channel1, channel2, res_p, resname))
         with Pool(processes=ncore) as pool:

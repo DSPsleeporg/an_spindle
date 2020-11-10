@@ -27,6 +27,7 @@ sys.path.append('../anmodel')
 
 from copy import copy
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -163,6 +164,7 @@ class Normalization:
 
     def norm_sws(self, param: pd.Series, 
                  gl: float=None, gl_name: str = None, 
+                 gl2: float=None, gl2_name: str=None, 
                  samp_len: int=10) -> List[int]:
         """ Normalize frequency of burst firing in SWS firing pattern.
 
@@ -188,6 +190,12 @@ class Normalization:
         elif gl_name == 'na':
             self.model.leak.set_gna(gl)
 
+        if gl2 is not None:
+            if gl_name == 'k':
+                self.model.leak.set_gk(gl2)
+            elif gl_name == 'na':
+                self.model.leak.set_gna(gl2)
+
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
         del(s)
@@ -208,6 +216,7 @@ class Normalization:
 
     def norm_spn(self, param: pd.Series, 
                  gl: float=None, gl_name: str = None, 
+                 gl2: float=None, gl2_name: str=None, 
                  samp_len: int=10) -> List[int]:
         """ Normalize frequency of burst firing in SPN firing pattern.
 
@@ -232,6 +241,12 @@ class Normalization:
             self.model.leak.set_gk(gl)
         elif gl_name == 'na':
             self.model.leak.set_gna(gl)
+
+        if gl2 is not None:
+            if gl_name == 'k':
+                self.model.leak.set_gk(gl2)
+            elif gl_name == 'na':
+                self.model.leak.set_gna(gl2)
 
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
@@ -337,7 +352,28 @@ class Normalization:
         sns.heatmap(hm_ca_df.values.tolist(), cmap='jet')
         plt.savefig(res_p/f'{self.wavepattern}_{self.model_name}_ca_hm.png')
 
-    def time_bifurcation_rep(self, filename: str, channel: str) -> None:
+    def param_change(self, param_c, channel, i):
+        if channel != 'g_kleak' and channel != 'g_naleak':
+            param_c[channel] = param_c[channel] * i / 1000
+            g = None
+            gl_name = None
+        elif channel == 'g_kleak':
+            self.model.set_params(param_c)
+            self.model.leak.set_div()
+            g_kl = self.model.leak.gkl
+            g = copy(g_kl)
+            g = g * i / 1000
+            gl_name = 'k'
+        elif channel == 'g_naleak':
+            self.model.set_params(param_c)
+            self.model.leak.set_div()
+            g_nal = self.model.leak.gnal
+            g = copy(g_nal)
+            g = g * i / 1000
+            gl_name = 'na'
+        return [param_c, g, gl_name]
+    
+    def time_bifurcation_rep(self, filename: str, channel: str, diff: int=100) -> None:
         """ Calculate time points for 1st~6th burst firing for 
         the representative parameter set through bifurcation.
 
@@ -348,34 +384,18 @@ class Normalization:
         """
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
-        resname: str = f'{filename}_time.pickle'
+        resname: str = f'{filename}_{diff}_time.pickle'
         res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation_rep' / f'{self.model_name}'
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
 
-        res_df = pd.DataFrame([], columns=range(7), index=np.arange(900, 1101))
+        start = 1000 - diff
+        end = 1000 + diff + 1
+        res_df = pd.DataFrame([], columns=range(7), index=np.arange(start, end))
         param_c = copy(param)
         for i in tqdm(res_df.index):
-            if channel != 'g_kleak' and channel != 'g_naleak':
-                param_c[channel] = param_c[channel] * i / 1000
-                g = None
-                gl_name = None
-            elif channel == 'g_kleak':
-                self.model.set_params(param_c)
-                self.model.leak.set_div()
-                g_kl = self.model.leak.gkl
-                g = copy(g_kl)
-                g = g * i / 1000
-                gl_name = 'k'
-            elif channel == 'g_naleak':
-                self.model.set_params(param_c)
-                self.model.leak.set_div()
-                g_nal = self.model.leak.gnal
-                g = copy(g_nal)
-                g = g * i / 1000
-                gl_name = 'na'
-
+            param_c, g, gl_name = self.param_change(param_c, channel, i)
             if self.wavepattern == 'SWS':
                 res_df.loc[i, :] = self.norm_sws(param_c, g, gl_name)
             elif self.wavepattern == 'SPN':
@@ -390,6 +410,57 @@ class Normalization:
 
         with open(res_p/resname, 'wb') as f:
             pickle.dump(res_df, f)
+    
+    def two_bifur_singleprocess(self, args) -> None:
+        core, param_lst, r_df, channel1, channel2, res_p, resname = args
+        for p_lst in param_lst:
+            m, param_c1, g1, gl1_name = p_lst
+            r_name = f'{resname}_{m}.pickle'
+            param_c2 = copy(param_c1)
+            for i in tqdm(r_df.columns):
+                param_c2, g2, gl2_name = self.param_change(param_c1, channel2, i)
+                if self.wavepattern == 'SWS':
+                    try:
+                        r_df.loc[m, i] = 1000 / np.diff(self.norm_sws(param_c2, g1, gl1_name, g2, gl2_name)).mean()
+                    except:
+                        r_df.loc[m, i] = None
+                elif self.wavepattern == 'SPN':
+                    try:
+                        r_df.loc[m, i] = 1000 / np.diff(self.norm_spn(param_c2, g1, gl1_name, g2, gl2_name)).mean()
+                    except:
+                        r_df.loc[m, i] = None
+                else:
+                    raise NameError(f'Wavepattern {self.wavepattern} is unvalid.')
+
+            with open(res_p/r_name, 'wb') as f:
+                pickle.dump(r_df, f)
+
+    def two_bifur_multi_singleprocess(self, ncore, filename, channel1, channel2, diff, interval):
+        p: Path = Path.cwd().parents[0]
+        data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'two_bifurcation' / f'{self.model_name}'
+        res_p.mkdir(parents=True, exist_ok=True)
+        with open(data_p/filename, 'rb') as f:
+            param = pickle.load(f)
+
+        start = 1000 - diff
+        end = 1000 + diff + 1
+        # index: channel_1, columns: channel_2
+        magnif_lst = np.arange(start, end, interval)
+        res_df = pd.DataFrame(index=magnif_lst, columns=magnif_lst)
+        resname = f'{filename}_{diff}'
+
+        args: List = []
+        for core, m_lst in enumerate(np.array_split(magnif_lst, ncore)):
+            param_lst = []
+            param_c = copy(param)
+            for m in m_lst:
+                param_c1, g1, gl1_name = self.param_change(param_c, channel1, m)
+                param_lst.append([m, param_c1, g1, gl1_name])
+            r_df = res_df.loc[m_lst, :]
+            args.append((core, param_lst, r_df, channel1, channel2, res_p, resname))
+        with Pool(processes=ncore) as pool:
+            pool.map(self.two_bifur_singleprocess, args)
 
     def time_bifurcation_all(self, filename: str, 
                              channel: str, magnif: float) -> None:
@@ -413,25 +484,7 @@ class Normalization:
         for i in tqdm(range(len(df))):
             param = df.iloc[i, :]
             param_c = copy(param)
-            if channel != 'g_kleak' and channel != 'g_naleak':
-                param_c[channel] = param_c[channel] * magnif
-                g = None
-                gl_name = None
-            elif channel == 'g_kleak':
-                self.model.set_params(param_c)
-                self.model.leak.set_div()
-                g_kl = self.model.leak.gkl
-                g = copy(g_kl)
-                g = g * magnif
-                gl_name = 'k'
-            elif channel == 'g_naleak':
-                self.model.set_params(param_c)
-                self.model.leak.set_div()
-                g_nal = self.model.leak.gnal
-                g = copy(g_nal)
-                g = g * magnif
-                gl_name = 'na'
-
+            param_c, g, gl_name = self.param_change(param_c, channel, i)
             if self.wavepattern == 'SWS':
                 res_df.loc[i, :] = self.norm_sws(param_c, g, gl_name)
             elif self.wavepattern == 'SPN':
@@ -651,7 +704,15 @@ if __name__ == '__main__':
         norm.mp_ca(filename)
     elif method == 'time_bifurcation_rep':
         channel = arg[5]
-        norm.time_bifurcation_rep(filename, channel)
+        diff = int(arg[6])
+        norm.time_bifurcation_rep(filename, channel, diff)
+    elif method == 'two_bifur':
+        channel1 = arg[5]
+        channel2 = arg[6]
+        diff = int(arg[7])
+        interval = int(arg[8])
+        ncore = int(arg[9])
+        norm.two_bifur_multi_singleprocess(ncore, filename, channel1, channel2, diff, interval)
     elif method == 'time_bifurcation_all':
         channel = arg[5]
         magnif = float(arg[6])

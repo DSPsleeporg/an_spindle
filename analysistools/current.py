@@ -323,6 +323,48 @@ class AN:
             with open(res_p/f'{channel}.pickle', 'wb') as f:
                 pickle.dump(p_res_dic[channel], f)
 
+    def mp_ca_trace(self, filename: str):
+        now = datetime.now()
+        date = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'mp_ca_trace' / 'AN' / date
+        res_p.mkdir(parents=True, exist_ok=True)
+
+        data_p = p / 'results' / f'{self.wavepattern}_params' / 'AN' / filename
+        time_p = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_AN_time.pickle'
+        with open(data_p, 'rb') as f:
+            param_df = pickle.load(f)
+        with open(time_p, 'rb') as f:
+            time_df = pickle.load(f).dropna(how='all')
+        param_df.index = range(len(param_df))
+        time_df.index = range(len(time_df))
+        if len(param_df) != len(time_df):
+            raise Exception
+     
+        mp_res = pd.DataFrame([], columns=range(6000), index=param_df.index)
+        ca_res = pd.DataFrame([], columns=range(6000), index=param_df.index) 
+        for idx in tqdm(param_df.index):
+            param = param_df.loc[idx, :]
+            self.set_params(param)
+            self.model.set_params(param)
+            e = time_df.loc[idx, :]
+            try:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+            except TypeError:
+                continue
+            s, _ = self.model.run_odeint(samp_len=samp_len)
+            v = s[5000:, 0]
+            ca = s[5000:, -1]
+            for j in range(len(e)-1):
+                tlst = np.linspace(e[j], e[j+1], 1000, dtype=int)
+                mp_res.loc[idx, 1000*j:1000*(j+1)-1] = v[tlst]
+                ca_res.loc[idx, 1000*j:1000*(j+1)-1] = ca[tlst]
+        
+        with open(res_p/'mp.pickle', 'wb') as f:
+            pickle.dump(mp_res, f)
+        with open(res_p/'ca.pickle', 'wb') as f:
+            pickle.dump(ca_res, f)
+
     def b_s_ratio(self, filename: str):
         now = datetime.now()
         date = f'{now.year}_{now.month}_{now.day}'
@@ -812,7 +854,48 @@ class RAN:
         for channel in p_res_dic.keys():
             with open(res_p/f'{channel}.pickle', 'wb') as f:
                 pickle.dump(p_res_dic[channel], f)
-                
+    
+    def mp_ca_trace(self, filename: str):
+        now = datetime.now()
+        date = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'mp_ca_trace' / 'RAN' / date
+        res_p.mkdir(parents=True, exist_ok=True)
+
+        data_p = p / 'results' / f'{self.wavepattern}_params' / 'RAN' / filename
+        time_p = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_RAN_time.pickle'
+        with open(data_p, 'rb') as f:
+            param_df = pickle.load(f)
+        with open(time_p, 'rb') as f:
+            time_df = pickle.load(f).dropna(how='all')
+        param_df.index = range(len(param_df))
+        time_df.index = range(len(time_df))
+        if len(param_df) != len(time_df):
+            raise Exception
+     
+        mp_res = pd.DataFrame([], columns=range(6000), index=param_df.index)
+        ca_res = pd.DataFrame([], columns=range(6000), index=param_df.index) 
+        for idx in tqdm(param_df.index):
+            param = param_df.loc[idx, :]
+            self.set_params(param)
+            self.model.set_params(param)
+            e = time_df.loc[idx, :]
+            try:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+            except TypeError:
+                continue
+            s, _ = self.model.run_odeint(samp_len=samp_len)
+            v = s[5000:, 0]
+            ca = s[5000:, -1]
+            for j in range(len(e)-1):
+                tlst = np.linspace(e[j], e[j+1], 1000, dtype=int)
+                mp_res.loc[idx, 1000*j:1000*(j+1)-1] = v[tlst]
+                ca_res.loc[idx, 1000*j:1000*(j+1)-1] = ca[tlst]
+        
+        with open(res_p/'mp.pickle', 'wb') as f:
+            pickle.dump(mp_res, f)
+        with open(res_p/'ca.pickle', 'wb') as f:
+            pickle.dump(ca_res, f)            
 
     def b_s_ratio(self, filename: str):
         now = datetime.now()
@@ -909,11 +992,18 @@ if __name__ == '__main__':
             analysistools.current.RAN().p_heatmap(filename)
     elif method == 'curr_trace':
         if model == 'AN':
-            analysistools.current.AN(wavepattern=wavepattern).b_s_ratio(filename)
-        elif model == 'SAN':
-            analysistools.current.SAN().b_s_ratio(filename)
+            analysistools.current.AN(wavepattern=wavepattern).curr_trace(filename)
+        # elif model == 'SAN':
+        #     analysistools.current.SAN().curr_trace(filename)
         elif model == 'RAN':
             analysistools.current.RAN().curr_trace(filename)
+    elif method == 'mp_ca_trace':
+        if model == 'AN':
+            analysistools.current.AN(wavepattern=wavepattern).mp_ca_trace(filename)
+        # elif model == 'SAN':
+        #     analysistools.current.SAN().b_s_ratio(filename)
+        elif model == 'RAN':
+            analysistools.current.RAN().mp_ca_trace(filename)
     elif method == 'b_s_ratio':
         if model == 'AN':
             analysistools.current.AN(wavepattern=wavepattern).b_s_ratio(filename)

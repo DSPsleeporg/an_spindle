@@ -239,8 +239,8 @@ class Normalization:
         if channel != 'g_nal' and channel != 'g_kl' and channel2 != 'g_nal' and channel2 != 'g_kl':
             self.model.leak.reset_div()
         else:
-            self.model.leak.set_gk(param['g_kl'])
-            self.model.leak.set_gnal(param['g_nal'])
+            self.model.leak.set_g(param['g_kl'])
+            self.model.leak.set_gna(param['g_nal'])
 
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
@@ -425,6 +425,7 @@ class Normalization:
                     pass
                 elif self.wavepattern == 'SPN':
                     try:
+                        print(self.norm_spn(param=param_cc, channel=channel1, channel2=channel2))
                         r_df.loc[m, i] = 1000 / np.diff(self.norm_spn(param=param_cc, channel=channel1, channel2=channel2)).mean()
                     except:
                         r_df.loc[m, i] = None

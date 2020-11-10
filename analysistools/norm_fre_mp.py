@@ -158,12 +158,11 @@ class Normalization:
             return [sh[i] for i in range(7)]
         else:
             if samp_len <=20:
-                self.norm_sws(param=param, samp_len=samp_len+10)
+                self.norm_sws(param=param, channel=channel, samp_len=samp_len+10)
             else:
                 return [None] * 7
 
-    def norm_sws(self, param: pd.Series, 
-                 gl: float=None, gl_name: str = None, 
+    def norm_sws(self, param: pd.Series, channel=None, channel2=None, 
                  samp_len: int=10) -> List[int]:
         """ Normalize frequency of burst firing in SWS firing pattern.
 
@@ -183,17 +182,15 @@ class Normalization:
         List[int]
             the index (time (ms)) of the 1st~6th ends of burst firing
         """
-        self.model.set_params(param)
-        if gl_name == 'k':
-            self.model.leak.set_gk(gl)
-        elif gl_name == 'na':
-            self.model.leak.set_gna(gl)
-
-        if gl2 is not None:
-            if gl_name == 'k':
-                self.model.leak.set_gk(gl2)
-            elif gl_name == 'na':
-                self.model.leak.set_gna(gl2)
+        if channel is not None:
+            self.model.set_params(param.drop(['g_kl', 'g_nal']))
+            if channel != 'g_nal' and channel != 'g_kl' and channel2 != 'g_nal' and channel2 != 'g_kl':
+                self.model.leak.reset_div()
+            else:
+                self.model.leak.set_gk(param['g_kl'])
+                self.model.leak.set_gna(param['g_nal'])
+        else:
+            self.model.set_params(param)
 
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
@@ -209,11 +206,11 @@ class Normalization:
             return e[:7]
         else:
             if samp_len <= 20:
-                self.norm_sws(param=param, samp_len=samp_len+10)
+                self.norm_sws(param=param, channel=channel, samp_len=samp_len+10)
             else:
                 return [None] * 7
 
-    def norm_spn(self, param: pd.Series, channel, channel2=None, 
+    def norm_spn(self, param: pd.Series, channel=None, channel2=None, 
                  samp_len: int=10) -> List[int]:
         """ Normalize frequency of burst firing in SPN firing pattern.
 
@@ -497,12 +494,16 @@ class Normalization:
         res_df = pd.DataFrame([], columns=range(7), index=range(len(df)))
         for i in tqdm(range(len(df))):
             param = df.iloc[i, :]
+            self.model.set_params(param)
+            self.model.leak.set_div()
+            param.loc['g_nal'] = self.model.leak.gnal
+            param.loc['g_kl'] = self.model.leak.gkl
             param_c = copy(param)
-            param_c, g, gl_name = self.param_change(param_c, channel, i)
+            param_c[channel] = param_c[channel] * magnif
             if self.wavepattern == 'SWS':
-                res_df.loc[i, :] = self.norm_sws(param_c, g, gl_name)
+                res_df.loc[i, :] = self.norm_sws(param_c, channel)
             elif self.wavepattern == 'SPN':
-                res_df.loc[i, :] = self.norm_spn(param_c, g, gl_name)
+                res_df.loc[i, :] = self.norm_spn(param_c, channel)
             else:
                 raise NameError(f'Wavepattern {self.wavepattern} is unvalid.')
 

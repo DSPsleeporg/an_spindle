@@ -597,6 +597,8 @@ class Normalization:
             for idx in sh_idx:
                 if fr_d[idx] < 0.1 or fr_u[idx] > 2.0:
                     pass
+                elif fr_d[idx] > 2.0 or fr_u[idx] < 0.1:
+                    pass
                 elif fr_d[idx] < 0.975 and fr_u[idx] > 1.025:
                     n_inc += 1
                     diff = fr_u[idx] - fr_d[idx]

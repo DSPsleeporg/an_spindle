@@ -322,6 +322,34 @@ class AN:
         for channel in p_res_dic.keys():
             with open(res_p/f'{channel}.pickle', 'wb') as f:
                 pickle.dump(p_res_dic[channel], f)
+    
+    def load_curr_trace(self, date):
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'curr_trace' / 'AN' / date
+        with open(res_p/'kleak.pickle', 'rb') as f:
+            self.kl_ct = pickle.load(f)
+        self.kl_ct_mean = self.kl_ct.mean()
+        self.kl_ct_std = self.kl_ct.std()
+        with open(res_p/'kvsi.pickle', 'rb') as f:
+            self.kvsi_ct = pickle.load(f)
+        self.kvsi_ct_mean = self.kvsi_ct.mean()
+        self.kvsi_ct_std = self.kvsi_ct.std()
+        with open(res_p/'kca.pickle', 'rb') as f:
+            self.kca_ct = pickle.load(f)
+        self.kca_ct_mean = self.kca_ct.mean()
+        self.kca_ct_std = self.kca_ct.std()
+        with open(res_p/'naleak.pickle', 'rb') as f:
+            self.nal_ct = pickle.load(f)
+        self.nal_ct_mean = self.nal_ct.mean()
+        self.nal_ct_std = self.nal_ct.std()
+        with open(res_p/'cav.pickle', 'rb') as f:
+            self.cav_ct = pickle.load(f)
+        self.cav_ct_mean = self.cav_ct.mean()
+        self.cav_ct_std = self.cav_ct.std()
+        with open(res_p/'nap.pickle', 'rb') as f:
+            self.nap_ct = pickle.load(f)
+        self.nap_ct_mean = self.nap_ct.mean()
+        self.nap_ct_std = self.nap_ct.std()
 
     def mp_ca_trace(self, filename: str):
         now = datetime.now()
@@ -854,7 +882,35 @@ class RAN:
         for channel in p_res_dic.keys():
             with open(res_p/f'{channel}.pickle', 'wb') as f:
                 pickle.dump(p_res_dic[channel], f)
-    
+
+    def load_curr_trace(self, date):
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'curr_trace' / 'RAN' / date
+        with open(res_p/'kleak.pickle', 'rb') as f:
+            self.kl_ct = pickle.load(f)
+        self.kl_ct_mean = self.kl_ct.mean()
+        self.kl_ct_std = self.kl_ct.std()
+        with open(res_p/'kvsi.pickle', 'rb') as f:
+            self.kvsi_ct = pickle.load(f)
+        self.kvsi_ct_mean = self.kvsi_ct.mean()
+        self.kvsi_ct_std = self.kvsi_ct.std()
+        with open(res_p/'kca.pickle', 'rb') as f:
+            self.kca_ct = pickle.load(f)
+        self.kca_ct_mean = self.kca_ct.mean()
+        self.kca_ct_std = self.kca_ct.std()
+        with open(res_p/'naleak.pickle', 'rb') as f:
+            self.nal_ct = pickle.load(f)
+        self.nal_ct_mean = self.nal_ct.mean()
+        self.nal_ct_std = self.nal_ct.std()
+        with open(res_p/'cav.pickle', 'rb') as f:
+            self.cav_ct = pickle.load(f)
+        self.cav_ct_mean = self.cav_ct.mean()
+        self.cav_ct_std = self.cav_ct.std()
+        with open(res_p/'nap.pickle', 'rb') as f:
+            self.nap_ct = pickle.load(f)
+        self.nap_ct_mean = self.nap_ct.mean()
+        self.nap_ct_std = self.nap_ct.std()
+
     def mp_ca_trace(self, filename: str):
         now = datetime.now()
         date = f'{now.year}_{now.month}_{now.day}'

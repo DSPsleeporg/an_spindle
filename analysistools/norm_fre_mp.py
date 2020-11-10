@@ -462,6 +462,19 @@ class Normalization:
         with Pool(processes=ncore) as pool:
             pool.map(self.two_bifur_singleprocess, args)
 
+    def load_two_bifur(self, filename, diff, interval):
+        p: Path = Path.cwd().parents[0]
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'two_bifurcation' / f'{self.model_name}'
+        start = 1000 - diff
+        end = 1000 + diff + 1
+        magnif_lst = np.arange(start, end, interval)
+        self.res_df = pd.DataFrame(index=magnif_lst, columns=magnif_lst)
+        for m in magnif_lst:
+            resname = f'{filename}_{diff}_{m}.pickle'
+            with open(res_p/resname, 'rb') as f:
+                self.res_df.loc[m, :] = pickle.load(f).iloc[0, :]
+    
+
     def time_bifurcation_all(self, filename: str, 
                              channel: str, magnif: float) -> None:
         """ Calculate time points for 1st~6th burst firing for 

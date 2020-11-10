@@ -297,7 +297,7 @@ class Normalization:
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)
         with open(res_p/f'{self.wavepattern}_{self.model_name}_time.pickle', 'rb') as f:
-            time_df = pickle.load(f)
+            time_df = pickle.load(f).dropna(how='all')
         
         hm_df = pd.DataFrame([], columns=range(48), index=range(len(time_df)))
         hm_ca_df = pd.DataFrame([], columns=range(48), index=range(len(time_df)))
@@ -349,24 +349,27 @@ class Normalization:
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         resname: str = f'{filename}_time.pickle'
-        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation_rep' / f'{self.model_name}' / resname
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation_rep' / f'{self.model_name}'
+        res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
 
         res_df = pd.DataFrame([], columns=range(7), index=np.arange(900, 1101))
+        param_c = copy(param)
         for i in tqdm(res_df.index):
             if channel != 'g_kleak' and channel != 'g_naleak':
-                p = copy(param)
-                p[channel] = p[channel] * i / 1000
+                param_c[channel] = param_c[channel] * i / 1000
                 g = None
                 gl_name = None
             elif channel == 'g_kleak':
+                self.model.set_params(param_c)
                 self.model.leak.set_div()
                 g_kl = self.model.leak.gkl
                 g = copy(g_kl)
                 g = g * i / 1000
                 gl_name = 'k'
             elif channel == 'g_naleak':
+                self.model.set_params(param_c)
                 self.model.leak.set_div()
                 g_nal = self.model.leak.gnal
                 g = copy(g_nal)
@@ -374,18 +377,18 @@ class Normalization:
                 gl_name = 'na'
 
             if self.wavepattern == 'SWS':
-                res_df.loc[i, :] = self.norm_sws(p, g, gl_name)
+                res_df.loc[i, :] = self.norm_sws(param_c, g, gl_name)
             elif self.wavepattern == 'SPN':
-                res_df.loc[i, :] = self.norm_spn(p, g, gl_name)
+                res_df.loc[i, :] = self.norm_spn(param_c, g, gl_name)
             else:
                 raise NameError(f'Wavepattern {self.wavepattern} is unvalid.')
 
             if i%10 == 0:
-                with open(res_p, 'wb') as f:
+                with open(res_p/resname, 'wb') as f:
                     pickle.dump(res_df, f)
                 print(f'Now i={i}, and pickled')
 
-        with open(res_p, 'wb') as f:
+        with open(res_p/resname, 'wb') as f:
             pickle.dump(res_df, f)
 
     def time_bifurcation_all(self, filename: str, 

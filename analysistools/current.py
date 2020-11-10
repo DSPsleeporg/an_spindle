@@ -246,6 +246,83 @@ class AN:
         with open(res_p/'gabar_in.pickle', 'rb') as f:
             self.gabar_in_hm = pickle.load(f)
 
+    def curr_trace(self, filename):
+        now = datetime.now()
+        date = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'curr_trace' / 'AN' / date
+        res_p.mkdir(parents=True, exist_ok=True)
+
+        data_p = p / 'results' / f'{self.wavepattern}_params' / 'AN' / filename
+        time_p = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_AN_time.pickle'
+        with open(data_p, 'rb') as f:
+            param_df = pickle.load(f)
+        with open(time_p, 'rb') as f:
+            time_df = pickle.load(f).dropna(how='all')
+        param_df.index = range(len(param_df))
+        time_df.index = range(len(time_df))
+        if len(param_df) != len(time_df):
+            raise Exception
+
+        p_res_dic = {
+            'kleak': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'kvhh': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'kva': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'kvsi': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'kir': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'kca': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'ampar_out': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'nmdar_out': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'gabar_out': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'naleak': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'nav': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'cav': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'nap': pd.DataFrame([], columns=range(6000), index=param_df.index),
+            'ampar_in': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'nmdar_in': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'gabar_in': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+        }
+        for idx in tqdm(param_df.index):
+            param = param_df.loc[idx, :]
+            self.set_params(param)
+            self.model.set_params(param)
+            e = time_df.loc[idx, :]
+            try:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+            except TypeError:
+                continue
+            s, _ = self.model.run_odeint(samp_len=samp_len)
+            v = s[5000:, 0]
+            ip_out, ip_in = self.get_p(s[5000:, :])
+            i_kl_p, i_kvhh_p, i_kva_p, i_kvsi_p, i_kir_p, i_kca_p, i_ampar_out_p, i_nmdar_out_p, i_gabar_out_p = ip_out
+            i_nal_p, i_nav_p, i_cav_p, i_nap_p, i_ampar_in_p, i_nmdar_in_p, i_gabar_in_p = ip_in
+            p_data_dic = {
+                'kleak': i_kl_p, 
+                'kvhh': i_kvhh_p, 
+                'kva': i_kva_p, 
+                'kvsi': i_kvsi_p, 
+                'kir': i_kir_p, 
+                'kca': i_kca_p, 
+                'ampar_out': i_ampar_out_p, 
+                'nmdar_out': i_nmdar_out_p, 
+                'gabar_out': i_gabar_out_p, 
+                'naleak': i_nal_p, 
+                'nav': i_nav_p, 
+                'cav': i_cav_p, 
+                'nap': i_nap_p,
+                'ampar_in': i_ampar_in_p, 
+                'nmdar_in': i_nmdar_in_p, 
+                'gabar_in': i_gabar_in_p, 
+            }
+            for j in range(len(e)-1):
+                tlst = np.linspace(e[j], e[j+1], 1000, dtype=int)
+                for ch in p_res_dic.keys():
+                    p_res_dic[ch].loc[idx, 1000*j:1000*(j+1)-1] = p_data_dic[ch][tlst]
+                    
+        for channel in p_res_dic.keys():
+            with open(res_p/f'{channel}.pickle', 'wb') as f:
+                pickle.dump(p_res_dic[channel], f)
+
     def b_s_ratio(self, filename: str):
         now = datetime.now()
         date = f'{now.year}_{now.month}_{now.day}'
@@ -679,6 +756,64 @@ class RAN:
         with open(res_p/'nap.pickle', 'rb') as f:
             self.nap_hm = pickle.load(f)
 
+    def curr_trace(self, filename):
+        now = datetime.now()
+        date = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'curr_trace' / 'RAN' / date
+        res_p.mkdir(parents=True, exist_ok=True)
+
+        data_p = p / 'results' / f'{self.wavepattern}_params' / 'RAN' / filename
+        time_p = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_RAN_time.pickle'
+        with open(data_p, 'rb') as f:
+            param_df = pickle.load(f)
+        with open(time_p, 'rb') as f:
+            time_df = pickle.load(f).dropna(how='all')
+        param_df.index = range(len(param_df))
+        time_df.index = range(len(time_df))
+        if len(param_df) != len(time_df):
+            raise Exception
+
+        p_res_dic = {
+            'kleak': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'kvsi': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'kca': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'naleak': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'cav': pd.DataFrame([], columns=range(6000), index=param_df.index), 
+            'nap': pd.DataFrame([], columns=range(6000), index=param_df.index),
+        }
+        for idx in tqdm(param_df.index):
+            param = param_df.loc[idx, :]
+            self.set_params(param)
+            self.model.set_params(param)
+            e = time_df.loc[idx, :]
+            try:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+            except TypeError:
+                continue
+            s, _ = self.model.run_odeint(samp_len=samp_len)
+            v = s[5000:, 0]
+            ip_out, ip_in = self.get_p(s[5000:, :])
+            i_kl_p, i_kvsi_p, i_kca_p = ip_out
+            i_nal_p, i_cav_p, i_nap_p = ip_in
+            p_data_dic = {
+                'kleak': i_kl_p, 
+                'kvsi': i_kvsi_p, 
+                'kca': i_kca_p, 
+                'naleak': i_nal_p, 
+                'cav': i_cav_p, 
+                'nap': i_nap_p,
+            }
+            for j in range(len(e)-1):
+                tlst = np.linspace(e[j], e[j+1], 1000, dtype=int)
+                for ch in p_res_dic.keys():
+                    p_res_dic[ch].loc[idx, 1000*j:1000*(j+1)-1] = p_data_dic[ch][tlst]
+                    
+        for channel in p_res_dic.keys():
+            with open(res_p/f'{channel}.pickle', 'wb') as f:
+                pickle.dump(p_res_dic[channel], f)
+                
+
     def b_s_ratio(self, filename: str):
         now = datetime.now()
         date = f'{now.year}_{now.month}_{now.day}'
@@ -772,6 +907,13 @@ if __name__ == '__main__':
             analysistools.current.SAN().p_heatmap(filename)
         elif model == 'RAN':
             analysistools.current.RAN().p_heatmap(filename)
+    elif method == 'curr_trace':
+        if model == 'AN':
+            analysistools.current.AN(wavepattern=wavepattern).b_s_ratio(filename)
+        elif model == 'SAN':
+            analysistools.current.SAN().b_s_ratio(filename)
+        elif model == 'RAN':
+            analysistools.current.RAN().curr_trace(filename)
     elif method == 'b_s_ratio':
         if model == 'AN':
             analysistools.current.AN(wavepattern=wavepattern).b_s_ratio(filename)

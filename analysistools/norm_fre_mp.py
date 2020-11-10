@@ -74,7 +74,7 @@ class Normalization:
             self.model = anmodel.models.SANmodel(ion, concentration)
         elif self.model == 'RAN':
             self.model_name = 'RAN'
-            ran_bool = [1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1]
+            ran_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
             self.model = anmodel.models.Xmodel(channel_bool=ran_bool, ion=ion, concentration=concentration)
         elif self.model == "X":
             if channel_bool is None:
@@ -233,7 +233,9 @@ class Normalization:
         List[int]
             the index (time (ms)) of the 1st~6th ends of burst firing
         """
-        self.model.set_params(param)
+        # print(param)
+        # print(param.drop(['g_kl', 'g_nal']))
+        self.model.set_params(param.drop(['g_kl', 'g_nal']))
         if channel != 'g_nal' and channel != 'g_kl' and channel2 != 'g_nal' and channel2 != 'g_kl':
             self.model.leak.reset_div()
         else:
@@ -254,7 +256,7 @@ class Normalization:
             return e[:7]
         else:
             if samp_len <= 20:
-                self.norm_spn(param=param, samp_len=samp_len+10)
+                self.norm_spn(param=param, channel=channel1, channel2=channel2, samp_len=samp_len+10)
             else:
                 return [None] * 7
 
@@ -423,7 +425,7 @@ class Normalization:
                     pass
                 elif self.wavepattern == 'SPN':
                     try:
-                        r_df.loc[m, i] = 1000 / np.diff(self.norm_spn(param=param_cc, channel1=channel1, channel2=channel2)).mean()
+                        r_df.loc[m, i] = 1000 / np.diff(self.norm_spn(param=param_cc, channel=channel1, channel2=channel2)).mean()
                     except:
                         r_df.loc[m, i] = None
                 else:
@@ -474,7 +476,7 @@ class Normalization:
             resname = f'{filename}_{diff}_{m}.pickle'
             with open(res_p/resname, 'rb') as f:
                 self.res_df.loc[m, :] = pickle.load(f).iloc[0, :]
-    
+
 
     def time_bifurcation_all(self, filename: str, 
                              channel: str, magnif: float) -> None:

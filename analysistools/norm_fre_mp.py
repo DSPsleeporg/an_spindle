@@ -254,7 +254,7 @@ class Normalization:
             return e[:7]
         else:
             if samp_len <= 20:
-                self.norm_spn(param=param, channel=channel1, channel2=channel2, samp_len=samp_len+10)
+                self.norm_spn(param=param, channel=channel, channel2=channel2, samp_len=samp_len+10)
             else:
                 return [None] * 7
 
@@ -411,7 +411,7 @@ class Normalization:
         core, param_lst, r_df, channel1, channel2, res_p, resname = args
         for p_lst in param_lst:
             m, param_c = p_lst
-            r_name = f'{resname}_{m}.pickle'
+            r_name = f'{resname}_{m}_{channel1}_{channel2}.pickle'
             for i in tqdm(r_df.columns):
                 param_cc = copy(param_c)
                 param_cc[channel2] = param_cc[channel2] * i/1000

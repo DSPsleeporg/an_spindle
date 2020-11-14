@@ -392,7 +392,7 @@ class Simple(WavePattern):
         with open(save_p, 'wb') as f:
             pickle.dump(res_df, f)
 
-    def multi_singleprocess(self, filename) -> None:
+    def multi_singleprocess(self, filename, divleak=False) -> None:
         args = []
         now = datetime.now()
         p: Path = Path.cwd().parents[0]
@@ -401,8 +401,11 @@ class Simple(WavePattern):
             df = pickle.load(f)
         ch_lst = list(df.columns)
         if 'g_leak' in ch_lst:
-            ch_lst.remove('g_leak')
-            ch_lst.extend(['g_kleak', 'g_naleak'])
+            if divleak:
+                ch_lst.remove('g_leak')
+                ch_lst.extend(['g_kleak', 'g_naleak'])
+            else:
+                pass
         for channel in ch_lst:
             args.append((now, df, channel))
         with Pool(processes=len(ch_lst)) as pool:

@@ -32,6 +32,10 @@ class PCA:
         if self.model == 'SAN':
             self.model_name = 'SAN'
             self.model = anmodel.models.SANmodel(ion, concentration)
+        elif self.model == 'RAN':
+            self.model_name = 'RAN'
+            ran_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
+            self.model = anmodel.models.Xmodel(channel_bool=ran_bool, ion=ion, concentration=concentration)
         if self.model == "X":
             if channel_bool is None:
                 raise TypeError('Designate channel in argument of X model.')
@@ -40,11 +44,11 @@ class PCA:
 
         self.pca = sklearn.decomposition.PCA()
 
-    def main(self, param_df: pd.DataFrame, pc: int=2) -> Tuple:
+    def main(self, param_df: pd.DataFrame, pc: int=2, order=1) -> Tuple:
         logparam_df = param_df.applymap(np.log10)
         normparam_df = self.normalize(logparam_df)
         pc_df, pc_cov = self.run_pca(normparam_df)
-        maxidx = self.get_repidx(pc_df, pc=pc)
+        maxidx = self.get_repidx(pc_df, pc=pc, order=order)
         repparam = param_df.iloc[maxidx]
         reppc = pc_df.iloc[maxidx]
         return (pc_df, pc_cov, repparam, reppc)
@@ -78,13 +82,14 @@ class PCA:
         pc_cov = np.cov(pc_df.T)
         return (pc_df, pc_cov)
 
-    def get_repidx(self, pc_df: pd.DataFrame, pc: int=2) -> int:
+    def get_repidx(self, pc_df: pd.DataFrame, pc: int=2, order: int=1) -> int:
         pc_lst = []
         for i in range(pc):
             pc_lst.append(f'pc{i+1}')
         kernel = gaussian_kde(pc_df[pc_lst].T)
-        kde_score = kernel.pdf(pc_df[pc_lst].T)
-        maxidx = np.where(kde_score == kde_score.max())
+        self.kde_score = kernel.pdf(pc_df[pc_lst].T)
+        kde_score_sorted = np.sort(self.kde_score)[::-1]
+        maxidx = np.where(self.kde_score == kde_score_sorted[order-1])
         return maxidx
 
     def plot_exp_ratio(self, ax: mpl.axes.Axes):

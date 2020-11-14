@@ -158,12 +158,11 @@ class Normalization:
             return [sh[i] for i in range(7)]
         else:
             if samp_len <=20:
-                self.norm_sws(param=param, samp_len=samp_len+10)
+                self.norm_sws(param=param, channel=channel, samp_len=samp_len+10)
             else:
                 return [None] * 7
 
-    def norm_sws(self, param: pd.Series, 
-                 gl: float=None, gl_name: str = None, 
+    def norm_sws(self, param: pd.Series, channel=None, channel2=None, 
                  samp_len: int=10) -> List[int]:
         """ Normalize frequency of burst firing in SWS firing pattern.
 
@@ -183,17 +182,15 @@ class Normalization:
         List[int]
             the index (time (ms)) of the 1st~6th ends of burst firing
         """
-        self.model.set_params(param)
-        if gl_name == 'k':
-            self.model.leak.set_gk(gl)
-        elif gl_name == 'na':
-            self.model.leak.set_gna(gl)
-
-        if gl2 is not None:
-            if gl_name == 'k':
-                self.model.leak.set_gk(gl2)
-            elif gl_name == 'na':
-                self.model.leak.set_gna(gl2)
+        if channel is not None:
+            self.model.set_params(param.drop(['g_kl', 'g_nal']))
+            if channel != 'g_nal' and channel != 'g_kl' and channel2 != 'g_nal' and channel2 != 'g_kl':
+                self.model.leak.reset_div()
+            else:
+                self.model.leak.set_gk(param['g_kl'])
+                self.model.leak.set_gna(param['g_nal'])
+        else:
+            self.model.set_params(param)
 
         s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
         v: np.ndarray = s[5000:, 0]
@@ -209,11 +206,11 @@ class Normalization:
             return e[:7]
         else:
             if samp_len <= 20:
-                self.norm_sws(param=param, samp_len=samp_len+10)
+                self.norm_sws(param=param, channel=channel, samp_len=samp_len+10)
             else:
                 return [None] * 7
 
-    def norm_spn(self, param: pd.Series, channel, channel2=None, 
+    def norm_spn(self, param: pd.Series, channel=None, channel2=None, 
                  samp_len: int=10) -> List[int]:
         """ Normalize frequency of burst firing in SPN firing pattern.
 
@@ -343,27 +340,6 @@ class Normalization:
         plt.figure(figsize=(20, 20))
         sns.heatmap(hm_ca_df.values.tolist(), cmap='jet')
         plt.savefig(res_p/f'{self.wavepattern}_{self.model_name}_ca_hm.png')
-
-    def param_change(self, param_c, channel, i):
-        if channel != 'g_kleak' and channel != 'g_naleak':
-            param_c[channel] = param_c[channel] * i / 1000
-            g = None
-            gl_name = None
-        elif channel == 'g_kleak':
-            self.model.set_params(param_c)
-            self.model.leak.set_div()
-            g_kl = self.model.leak.gkl
-            g = copy(g_kl)
-            g = g * i / 1000
-            gl_name = 'k'
-        elif channel == 'g_naleak':
-            self.model.set_params(param_c)
-            self.model.leak.set_div()
-            g_nal = self.model.leak.gnal
-            g = copy(g_nal)
-            g = g * i / 1000
-            gl_name = 'na'
-        return [param_c, g, gl_name]
     
     def time_bifurcation_rep(self, filename: str, channel: str, diff: int=100) -> None:
         """ Calculate time points for 1st~6th burst firing for 
@@ -414,7 +390,7 @@ class Normalization:
             r_name = f'{resname}_{m}_{channel1}_{channel2}.pickle'
             for i in tqdm(r_df.columns):
                 param_cc = copy(param_c)
-                param_cc[channel2] = param_cc[channel2] * i/1000
+                param_cc[f'g_{channel2}'] = param_cc[f'g_{channel2}'] * i/1000
                 if self.wavepattern == 'SWS':
                     # try:
                     #     r_df.loc[m, i] = 1000 / np.diff(self.norm_sws(param_cc, channel2, channel1)).mean()
@@ -456,22 +432,22 @@ class Normalization:
             param_lst = []
             for m in m_lst:
                 param_c = copy(param)
-                param_c[channel1] = param_c[channel1] * m/1000
+                param_c[f'g_{channel1}'] = param_c[f'g_{channel1}'] * m/1000
                 param_lst.append([m, param_c])
             r_df = res_df.loc[m_lst, :]
             args.append((core, param_lst, r_df, channel1, channel2, res_p, resname))
         with Pool(processes=ncore) as pool:
             pool.map(self.two_bifur_singleprocess, args)
 
-    def load_two_bifur(self, filename, diff, interval):
+    def load_two_bifur(self, filename, ch1, ch2, diff, interval):
         p: Path = Path.cwd().parents[0]
-        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'two_bifurcation' / f'{self.model_name}'
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'two_bifurcation' / f'{self.model_name}' / f'{ch1}_{ch2}'
         start = 1000 - diff
         end = 1000 + diff + 1
         magnif_lst = np.arange(start, end, interval)
         self.res_df = pd.DataFrame(index=magnif_lst, columns=magnif_lst)
         for m in magnif_lst:
-            resname = f'{filename}_{diff}_{m}.pickle'
+            resname = f'{filename}_{diff}_{m}_g_{ch1}_g_{ch2}.pickle'
             with open(res_p/resname, 'rb') as f:
                 self.res_df.loc[m, :] = pickle.load(f).iloc[0, :]
 
@@ -497,12 +473,16 @@ class Normalization:
         res_df = pd.DataFrame([], columns=range(7), index=range(len(df)))
         for i in tqdm(range(len(df))):
             param = df.iloc[i, :]
+            self.model.set_params(param)
+            self.model.leak.set_div()
+            param.loc['g_nal'] = self.model.leak.gnal
+            param.loc['g_kl'] = self.model.leak.gkl
             param_c = copy(param)
-            param_c, g, gl_name = self.param_change(param_c, channel, i)
+            param_c[channel] = param_c[channel] * magnif
             if self.wavepattern == 'SWS':
-                res_df.loc[i, :] = self.norm_sws(param_c, g, gl_name)
+                res_df.loc[i, :] = self.norm_sws(param_c, channel)
             elif self.wavepattern == 'SPN':
-                res_df.loc[i, :] = self.norm_spn(param_c, g, gl_name)
+                res_df.loc[i, :] = self.norm_spn(param_c, channel)
             else:
                 raise NameError(f'Wavepattern {self.wavepattern} is unvalid.')
 
@@ -659,6 +639,8 @@ class Normalization:
             var_inc = 0
             var_dec = 0
             fr_u, fr_d = data_dic[ch]
+            fr_u.index = range(len(fr_u))
+            fr_d.index = range(len(fr_d))
             sh_idx = np.intersect1d(fr_u.dropna().index, fr_d.dropna().index)
             sh_idx = sh_idx.astype(int)
             for idx in sh_idx:

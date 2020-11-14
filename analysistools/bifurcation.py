@@ -65,9 +65,23 @@ class Analysis:
         self.v_pad = 10
 
     def ode_bifur(self, channel: str, magnif: float) -> np.ndarray:
-        p = copy(self.param)
-        p[channel] = p[channel] * magnif
-        self.model.set_params(p)
+        if channel != 'g_nal' and channel != 'g_kl':
+            p = copy(self.param)
+            p[channel] = p[channel] * magnif
+            self.model.set_params(p)
+        else:
+            self.model.set_params(self.param)
+            self.model.leak.set_div()
+            gnal = self.model.leak.gnal
+            gkl = self.model.leak.gkl
+            if channel == 'g_nal':
+                gxl = copy(gnal)
+                gxl = gxl * magnif
+                self.model.leak.set_gna(gxl)
+            elif channel == 'g_kl':
+                gxl = copy(gkl)
+                gxl = gxl * magnif
+                self.model.leak.set_gk(gxl)
         s, _ = self.model.run_odeint(samp_freq=self.samp_freq)
         return s
 

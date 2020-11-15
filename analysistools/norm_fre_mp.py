@@ -387,10 +387,11 @@ class Normalization:
         core, param_lst, r_df, channel1, channel2, res_p, resname = args
         for p_lst in param_lst:
             m, param_c = p_lst
-            r_name = f'{resname}_{m}_{channel1}_{channel2}.pickle'
+            r_name = f'{resname}_{m}.pickle'
             for i in tqdm(r_df.columns):
                 param_cc = copy(param_c)
-                param_cc[f'g_{channel2}'] = param_cc[f'g_{channel2}'] * i/1000
+                # param_cc[f'g_{channel2}'] = param_cc[f'g_{channel2}'] * i/1000
+                param_cc[channel2] = param_cc[channel2] * i/1000
                 if self.wavepattern == 'SWS':
                     # try:
                     #     r_df.loc[m, i] = 1000 / np.diff(self.norm_sws(param_cc, channel2, channel1)).mean()
@@ -411,7 +412,7 @@ class Normalization:
     def two_bifur_multi_singleprocess(self, ncore, filename, channel1, channel2, diff, interval):
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
-        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'two_bifurcation' / f'{self.model_name}'
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'two_bifurcation' / f'{self.model_name}' / f'{channel1}_{channel2}'
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
@@ -432,7 +433,8 @@ class Normalization:
             param_lst = []
             for m in m_lst:
                 param_c = copy(param)
-                param_c[f'g_{channel1}'] = param_c[f'g_{channel1}'] * m/1000
+                # param_c[f'g_{channel1}'] = param_c[f'g_{channel1}'] * m/1000
+                param_c[channel1] = param_c[channel1] * m/1000
                 param_lst.append([m, param_c])
             r_df = res_df.loc[m_lst, :]
             args.append((core, param_lst, r_df, channel1, channel2, res_p, resname))

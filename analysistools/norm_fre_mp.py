@@ -447,7 +447,7 @@ class Normalization:
         magnif_lst = np.arange(start, end, interval)
         self.res_df = pd.DataFrame(index=magnif_lst, columns=magnif_lst)
         for m in magnif_lst:
-            resname = f'{filename}_{diff}_{m}_g_{ch1}_g_{ch2}.pickle'
+            resname = f'{filename}_{diff}_{m}.pickle'
             with open(res_p/resname, 'rb') as f:
                 self.res_df.loc[m, :] = pickle.load(f).iloc[0, :]
 

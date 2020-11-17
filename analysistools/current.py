@@ -634,6 +634,60 @@ class SAN:
         with open(res_p/'nap.pickle', 'rb') as f:
             self.nap_hm = pickle.load(f)
 
+    def mp_ca_trace(self, filename: str):
+        now = datetime.now()
+        date = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'mp_ca_trace' / 'SAN' / date
+        res_p.mkdir(parents=True, exist_ok=True)
+
+        data_p = p / 'results' / f'{self.wavepattern}_params' / 'SAN' / filename
+        time_p = p / 'results' / 'normalization_mp_ca' / f'{self.wavepattern}_SAN_time.pickle'
+        with open(data_p, 'rb') as f:
+            param_df = pickle.load(f)
+        with open(time_p, 'rb') as f:
+            time_df = pickle.load(f).dropna(how='all')
+        param_df.index = range(len(param_df))
+        time_df.index = range(len(time_df))
+        if len(param_df) != len(time_df):
+            raise Exception
+     
+        mp_res = pd.DataFrame([], columns=range(6000), index=param_df.index)
+        ca_res = pd.DataFrame([], columns=range(6000), index=param_df.index) 
+        for idx in tqdm(param_df.index):
+            param = param_df.loc[idx, :]
+            self.set_params(param)
+            self.model.set_params(param)
+            e = time_df.loc[idx, :]
+            try:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+            except TypeError:
+                continue
+            s, _ = self.model.run_odeint(samp_len=samp_len)
+            v: np.ndarray = scipy.stats.zscore(s[5000:, 0])
+            ca: np.ndarray = scipy.stats.zscore(s[5000:, -1])
+            for j in range(len(e)-1):
+                tlst = np.linspace(e[j], e[j+1], 1000, dtype=int)
+                mp_res.loc[idx, 1000*j:1000*(j+1)-1] = v[tlst]
+                ca_res.loc[idx, 1000*j:1000*(j+1)-1] = ca[tlst]
+        
+        with open(res_p/'mp.pickle', 'wb') as f:
+            pickle.dump(mp_res, f)
+        with open(res_p/'ca.pickle', 'wb') as f:
+            pickle.dump(ca_res, f)
+
+    def load_mp_ca_trace(self, date):
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'mp_ca_trace' / 'SAN' / date
+        with open(res_p/'mp.pickle', 'rb') as f:
+            self.mp = pickle.load(f)
+        self.mp_mean = self.mp.mean()
+        self.mp_std = self.mp.std()
+        with open(res_p/'ca.pickle', 'rb') as f:
+            self.ca = pickle.load(f)
+        self.ca_mean = self.ca.mean()
+        self.ca_std = self.ca.std()
+
     def b_s_ratio(self, filename: str):
         now = datetime.now()
         date = f'{now.year}_{now.month}_{now.day}'
@@ -975,7 +1029,7 @@ class RAN:
         with open(res_p/'ca.pickle', 'rb') as f:
             self.ca = pickle.load(f)
         self.ca_mean = self.ca.mean()
-        self.ca_std = self.ca.std()          
+        self.ca_std = self.ca.std()
 
     def b_s_ratio(self, filename: str):
         now = datetime.now()

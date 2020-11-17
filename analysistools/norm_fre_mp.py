@@ -455,7 +455,6 @@ class Normalization:
             with open(res_p/resname, 'rb') as f:
                 self.res_df.loc[m, :] = pickle.load(f).iloc[0, :]
 
-
     def time_bifurcation_all(self, filename: str, 
                              channel: str, magnif: float) -> None:
         """ Calculate time points for 1st~6th burst firing for 

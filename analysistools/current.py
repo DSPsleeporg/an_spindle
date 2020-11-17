@@ -381,8 +381,8 @@ class AN:
             except TypeError:
                 continue
             s, _ = self.model.run_odeint(samp_len=samp_len)
-            v = s[5000:, 0]
-            ca = s[5000:, -1]
+            v: np.ndarray = scipy.stats.zscore(s[5000:, 0])
+            ca: np.ndarray = scipy.stats.zscore(s[5000:, -1])
             for j in range(len(e)-1):
                 tlst = np.linspace(e[j], e[j+1], 1000, dtype=int)
                 mp_res.loc[idx, 1000*j:1000*(j+1)-1] = v[tlst]
@@ -392,6 +392,18 @@ class AN:
             pickle.dump(mp_res, f)
         with open(res_p/'ca.pickle', 'wb') as f:
             pickle.dump(ca_res, f)
+
+    def load_mp_ca_trace(self, date):
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'mp_ca_trace' / 'AN' / date
+        with open(res_p/'mp.pickle', 'rb') as f:
+            self.mp = pickle.load(f)
+        self.mp_mean = self.mp.mean()
+        self.mp_std = self.mp.std()
+        with open(res_p/'ca.pickle', 'rb') as f:
+            self.ca = pickle.load(f)
+        self.ca_mean = self.ca.mean()
+        self.ca_std = self.ca.std()
 
     def b_s_ratio(self, filename: str):
         now = datetime.now()
@@ -941,8 +953,8 @@ class RAN:
             except TypeError:
                 continue
             s, _ = self.model.run_odeint(samp_len=samp_len)
-            v = s[5000:, 0]
-            ca = s[5000:, -1]
+            v: np.ndarray = scipy.stats.zscore(s[5000:, 0])
+            ca: np.ndarray = scipy.stats.zscore(s[5000:, -1])
             for j in range(len(e)-1):
                 tlst = np.linspace(e[j], e[j+1], 1000, dtype=int)
                 mp_res.loc[idx, 1000*j:1000*(j+1)-1] = v[tlst]
@@ -951,7 +963,19 @@ class RAN:
         with open(res_p/'mp.pickle', 'wb') as f:
             pickle.dump(mp_res, f)
         with open(res_p/'ca.pickle', 'wb') as f:
-            pickle.dump(ca_res, f)            
+            pickle.dump(ca_res, f)
+
+    def load_mp_ca_trace(self, date):
+        p: Path = Path.cwd().parents[0]
+        res_p = p / 'results' / 'current' / 'mp_ca_trace' / 'RAN' / date
+        with open(res_p/'mp.pickle', 'rb') as f:
+            self.mp = pickle.load(f)
+        self.mp_mean = self.mp.mean()
+        self.mp_std = self.mp.std()
+        with open(res_p/'ca.pickle', 'rb') as f:
+            self.ca = pickle.load(f)
+        self.ca_mean = self.ca.mean()
+        self.ca_std = self.ca.std()          
 
     def b_s_ratio(self, filename: str):
         now = datetime.now()

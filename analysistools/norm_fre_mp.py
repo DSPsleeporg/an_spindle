@@ -413,6 +413,8 @@ class Normalization:
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         res_p: Path = p / 'results' / 'normalization_mp_ca' / 'two_bifurcation' / f'{self.model_name}' / f'{channel1}_{channel2}'
+        channel1 = 'g_' + channel1
+        channel2 = 'g_' + channel2
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)

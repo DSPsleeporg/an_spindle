@@ -1134,8 +1134,8 @@ if __name__ == '__main__':
     elif method == 'mp_ca_trace':
         if model == 'AN':
             analysistools.current.AN(wavepattern=wavepattern).mp_ca_trace(filename)
-        # elif model == 'SAN':
-        #     analysistools.current.SAN().b_s_ratio(filename)
+        elif model == 'SAN':
+            analysistools.current.SAN().mp_ca_trace(filename)
         elif model == 'RAN':
             analysistools.current.RAN().mp_ca_trace(filename)
     elif method == 'b_s_ratio':

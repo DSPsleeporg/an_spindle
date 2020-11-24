@@ -88,7 +88,7 @@ class SFA:
         ratio_lst = []
         for _, burst in enumerate(burst_events):
             isi = np.diff(burst)
-            isi_ratio = isi[0] / isi[-1]
+            isi_ratio = isi[-1] / isi[0]
             ratio_lst.append(isi_ratio)
         ratio_mean = np.mean(ratio_lst)
         return ratio_mean
@@ -105,8 +105,10 @@ class SFA:
         time_p: Path = p / 'results' / 'normalization_mp_ca' 
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)
+            param_df.index = range(len(param_df))
         with open(time_p/f'{self.wavepattern}_{self.model_name}_time.pickle', 'rb') as f:
-            time_df = pickle.load(f)  
+            time_df = pickle.load(f).dropna(how='all')
+            time_df.index = range(len(time_df))
 
         df: pd.DataFrame = pd.DataFrame(columns=['first_last_ratio'])
         for i in tqdm(range(len(time_df))):
@@ -131,11 +133,11 @@ if __name__ == '__main__':
     model = arg[1]
     wavepattern = arg[2]
     filename = arg[3]
-    if model == 'X':
+    if model == 'RAN':
         channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
         model_name = 'RAN'
         sfa = analysistools.spike_freq_adap.SFA(
-            model=model, 
+            model='X', 
             wavepattern=wavepattern, 
             channel_bool=channel_bool, 
             model_name=model_name, 

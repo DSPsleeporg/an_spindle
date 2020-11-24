@@ -269,6 +269,7 @@ class Normalization:
         res_p: Path = p / 'results' / 'normalization_mp_ca' / f'{filename}_time.pickle'
         with open(data_p/filename, 'rb') as f:
             df = pickle.load(f)
+            df.index = range(len(df))
 
         res_df = pd.DataFrame([], columns=range(7), index=range(len(df)))
         for i in tqdm(range(len(df))):
@@ -300,8 +301,10 @@ class Normalization:
         res_p: Path = p / 'results' / 'normalization_mp_ca'
         with open(data_p/filename, 'rb') as f:
             param_df = pickle.load(f)
+            param_df.index = range(len(param_df))
         with open(res_p/f'{self.wavepattern}_{self.model_name}_time.pickle', 'rb') as f:
             time_df = pickle.load(f).dropna(how='all')
+            time_df.index = range(len(time_df))
         
         hm_df = pd.DataFrame([], columns=range(48), index=range(len(time_df)))
         hm_ca_df = pd.DataFrame([], columns=range(48), index=range(len(time_df)))

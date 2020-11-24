@@ -31,6 +31,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import pickle
+from scipy.integrate import odeint
 import scipy.optimize
 from scipy.stats import gaussian_kde
 import sympy as sym
@@ -256,6 +257,177 @@ class Analysis:
                       bbox_to_anchor=(1.05, 1), loc='upper left', 
                       borderaxespad=0, fontsize=16)
         return ax
+
+
+class AttractorAnalysis:
+    def __init__(self, model: str='AN', wavepattern: str='SWS', 
+                 channel_bool: Optional[Dict]=None, 
+                 model_name: Optional[str]=None, 
+                 ion: bool=False, concentration: Dict=None) -> None:
+        self.model = model
+        self.wavepattern = wavepattern
+        if self.model == 'SAN':
+            self.model_name = 'SAN'
+            self.model = anmodel.models.SANmodel(ion, concentration)
+        if self.model == 'X':
+            if channel_bool is None:
+                raise TypeError('Designate channel in argument of X model.')
+            self.model_name = model_name
+            self.model = anmodel.models.Xmodel(channel_bool, ion, concentration)
+
+        self.samp_freq = 10000
+
+    def set_ca(self, ca):
+        self.ca = ca
+
+    def dvdt(self, args):
+        if self.model_name == 'SAN':
+            v, n = args
+            return ((-10.0*self.model.params.area 
+                * (self.model.kvhh.i(v, n=n) 
+                + self.model.cav.i(v) 
+                + self.model.kca.i(v, ca=self.ca) 
+                + self.model.nap.i(v) 
+                + self.model.leak.i(v))) 
+                / (10.0*self.model.params.cm*self.model.params.area))
+        elif self.model_name == 'RAN':
+            v, m = args
+            return ((-10.0*self.model.params.area 
+                * (self.model.kvsi.i(v, m=m) 
+                + self.model.cav.i(v) 
+                + self.model.kca.i(v, ca=self.ca) 
+                + self.model.nap.i(v) 
+                + self.model.leak.i(v))) 
+                / (10.0*self.model.params.cm*self.model.params.area))
+    
+    def diff_op(self, args, time):
+        if self.model_name == 'SAN':
+            v, n = args
+            dvdt = self.dvdt(args)
+            dndt = self.model.kvhh.dndt(v=v, n=n)
+            return [dvdt, dndt]
+        elif self.model_name == 'RAN':
+            v, m = args
+            dvdt = self.dvdt(args)
+            dmdt = self.model.kvsi.dmdt(v=v, m=m)
+            return [dvdt, dmdt]
+
+    def run_odeint(self, ini, samp_len=10):
+        solvetime = np.linspace(1, 1000*samp_len, self.samp_freq*samp_len)
+        s, _ = odeint(self.diff_op, ini, solvetime, 
+                      atol=1.0e-5, rtol=1.0e-5, full_output=True)
+        return s
+
+    def find_attractor(self, ca, start_points):
+        def _findroot(func, init):
+            sol, _, convergence, _ = scipy.optimize.fsolve(func, init, full_output=1)
+            if convergence == 1:
+                return sol
+            return np.array([np.nan]*1)
+        
+        def _numerical_continuation(func, v_ini: float, ca: float):
+            return _findroot(func(v_ini, ca))
+
+        def _func(v: float, ca: float) -> float:
+            if self.model_name == 'SAN':
+                l_inf = self.model.kvhh.n_inf(v=v)
+                dvdt = self.model.dvdt([v, l_inf, ca])
+            elif self.model_name == 'RAN':
+                l_inf = self.model.kvsi.m_inf(v=v)
+                dvdt = self.model.dvdt({
+                    'v': v, 
+                    'm_kvsi': l_inf, 
+                    'ca': ca
+                })
+            return dvdt
+
+        def _jacobian(v, ca):
+            x, y = sym.symbols('x, y')
+            if self.model_name == 'SAN':
+                l = self.model.kvhh.n_inf(v)
+                dfdx = sym.diff(self.model.dvdt([x, y, ca]), x)
+                dfdy = sym.diff(self.model.dvdt([x, y, ca]), y)
+                dgdx = sym.diff(self.model.kvhh.dndt(v=x, n=y), x)
+                dgdy = sym.diff(self.model.kvhh.dndt(v=x, n=y), y)
+            elif self.model_name == 'RAN':
+                l = self.model.kvsi.m_inf(v=v)
+                dfdx = sym.diff(self.model.dvdt({'v': x, 'm_kvsi': y, 'ca': ca}), x)
+                dfdy = sym.diff(self.model.dvdt({'v': x, 'm_kvsi': y, 'ca': ca}), y)
+                dgdx = sym.diff(self.model.kvsi.dmdt(v=x, m=y), x)
+                dgdy = sym.diff(self.model.kvsi.dmdt(v=x, m=y), y)
+            j = np.array([[np.float(dfdx.subs([(x, v), (y, l)])), 
+                           np.float(dfdy.subs([(x, v), (y, l)]))], 
+                          [np.float(dgdx.subs([(x, v), (y, l)])), 
+                           np.float(dgdy.subs([(x, v), (y, l)]))]])
+            return j
+
+        def _stability(j) -> str:
+            det = np.linalg.det(j)
+            trace = np.matrix.trace(j)
+            if np.isclose(trace, 0) and np.isclose(det, 0):
+                nat = 'Center (Hopf)'
+            elif np.isclose(det, 0):
+                nat = 'Transcritical (Saddle-Node)'
+            elif det < 0:
+                nat = 'Saddle'
+            else:
+                nat = 'Stable' if trace < 0 else 'Unstable'
+                nat += ' focus' if (trace**2 - 4 * det) < 0 else ' node'
+            return nat
+        
+        for init in start_points:
+            eq = _findroot(func(init, ca))
+            nat = _stability(_jacobian(eq, ca))
+            if nat == 'Stable focus':
+                return eq  # v value at stable focus attractor
+        raise Exception('Stabel focus attractor was not found.')
+
+    def singleprocess(self, args):
+        core, res_df, ca, v_start, res_p, resname = args
+        vini_lst = df.columns
+        lini_lst = df.index
+        vatt = self.find_attractor(ca, v_start)
+        if self.model_name == 'SAN':
+            latt = self.model.kvhh.n_inf(v=vatt)
+        elif self.model_name == 'RAN':
+            latt = self.model.kvsi.m_inf(v=vatt)
+
+        for lini in lini_lst:
+            for vini in vini_lst:
+                ini = [vini, lini]
+                s = self.run_odeint(ini)
+                t_v = np.where(s[:, 0] < 1.0e-5)
+                t_l = np.where(s[:, 1] < 1.0e-5)
+                t = np.max([t_v, t_l])
+                res_df.loc[lini, vini] = t
+        with open(res_p/resname, 'rb') as f:
+            pickle.dump(res_df, f)
+        
+    def multi_singleprocess(self, ncore, filename, vargs, largs, ca, v_start):
+        """
+        Parameters
+        ----------
+        vargs : Tuple
+            vmin, vmax, vint
+        largs : Tuple
+            l: n_kvhh in SAN model and m_kvsi in RAN model. lmin, lmax, lint
+        """
+        now = datetime.now()
+        date: str = f'{now.year}_{now.month}_{now.day}'
+        p: Path = Path.cwd().parents[0]
+        data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
+        res_p: Path = p / 'results' / 'bifurcation' / 'attractor_time' / f'{self.model_name}'
+        res_p.mkdir(parents=True, exist_ok=True)
+        with open(data_p/filename, 'rb') as f:
+            param = pickle.load(f)
+        v_lst = np.linspace(vargs[0], vargs[1], vargs[2])
+        l_lst = np.linspace(largs[0], largs[1], vargs[2])
+
+        args: List = []
+        for core, ll_lst in enumerate(np.array_split(l_lst, ncore)):
+            res_df = pd.DataFrame(index=ll_lst, columns=v_lst)
+            resname = f'{date}_{filename}_{core}.pickle'
+            args.append((core, res_df, ca, v_start, res_p, resname))
 
 
 class WavePattern:
@@ -492,7 +664,7 @@ class Property:
             param_df = pickle.load(f)
             param_df.index = range(len(param_df))
         with open(t_file, 'rb') as f:
-            time_df = pickle.load(f)
+            time_df = pickle.load(f).dropna(how='all')
             time_df.index = range(len(time_df))
         
         print(len(param_df))
@@ -667,6 +839,28 @@ if __name__ == '__main__':
                 wavepattern=wavepattern, 
             )
         prp.main(filename=filename, t_filename=t_filename)
+
+    elif method == 'attractor_time':
+        ncore = int(arg[5])
+        vargs = args[6]
+        largs = args[7]
+        ca = args[8]
+        v_start = args[9]
+        if model == 'RAN':
+            channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
+            model_name = 'RAN'
+            at = analysistools.bifurcation.AttractorAnalysis(
+                model='X', 
+                model_name=model_name, 
+                channel_bool=channel_bool, 
+                wavepattern=wavepattern, 
+            )
+        else:
+            at = analysistools.bifurcation.AttractorAnalysis(
+                model=model, 
+                wavepattern=wavepattern,
+            )
+        at.multi_singleprocess(ncore, filename, vargs, largs, ca, v_start)
 
     elif method == 'plot':
         channel = arg[5]

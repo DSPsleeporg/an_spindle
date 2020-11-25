@@ -92,23 +92,27 @@ class Analysis:
         self.st = st
         self.en = en
 
-    def nullcline(self, t: int, 
-                  ax: plt.axes, flow=False) -> plt.axes:
+    def nullcline(self, t: int, ax: plt.axes, 
+                  mode='t', flow=False) -> plt.axes:
         lmin = self.s[self.st:self.en, 1].min() - self.l_pad
         lmax = self.s[self.st:self.en, 1].max() + self.l_pad
         vmin = self.s[self.st:self.en, 0].min() - self.v_pad
         vmax = self.s[self.st:self.en, 0].max() + self.v_pad
         l_grid, v_grid = np.meshgrid(np.arange(lmin, lmax, 0.001), 
                                      np.arange(vmin, vmax, 0.1))
+        if mode == 't':
+            ca = self.s[t, 2]
+        elif mode == 'ca':
+            ca = t
         if self.model_name == 'SAN':
             dldt = np.array([self.model.kvhh.dndt(v, n) for (v, n) in zip(v_grid.ravel(), l_grid.ravel())]).reshape(l_grid.shape)
-            dvdt = self.model.dvdt([v_grid, l_grid, self.s[t, 2]])
+            dvdt = self.model.dvdt([v_grid, l_grid, ca])
         elif self.model_name == 'RAN':
             dldt = self.model.kvsi.dmdt(v_grid, l_grid)
             dvdt = self.model.dvdt({
                 'v': v_grid, 
                 'm_kvsi': l_grid, 
-                'ca': self.s[t, 2]
+                'ca': ca, 
             })
         ct1 = ax.contour(v_grid, l_grid, dldt, 
                          levels=[0], colors='steelblue', # 4682b4

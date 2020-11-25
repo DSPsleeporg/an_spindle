@@ -443,8 +443,7 @@ class Normalization:
                 param_lst.append([m, param_c])
             r_df = res_df.loc[m_lst, :]
             args.append((core, param_lst, r_df, channel1, channel2, res_p, resname))
-        with Pool(processes=ncore) as pool:
-            pool.map(self.two_bifur_singleprocess, args)
+         
 
     def load_two_bifur(self, filename, ch1, ch2, diff, interval):
         p: Path = Path.cwd().parents[0]

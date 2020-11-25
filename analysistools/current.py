@@ -355,7 +355,7 @@ class AN:
         now = datetime.now()
         date = f'{now.year}_{now.month}_{now.day}'
         p: Path = Path.cwd().parents[0]
-        res_p = p / 'results' / 'current' / 'mp_ca_trace' / 'AN' / date
+        res_p = p / 'results' / 'current' / 'mp_ca_trace' / 'AN' / f'{self.wavepattern}' / date
         res_p.mkdir(parents=True, exist_ok=True)
 
         data_p = p / 'results' / f'{self.wavepattern}_params' / 'AN' / filename

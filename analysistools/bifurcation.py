@@ -187,6 +187,7 @@ class Analysis:
                 dfdy = sym.diff(self.model.dvdt({'v': x, 'm_kvsi': y, 'ca': ca}), y)
                 dgdx = sym.diff(self.model.kvsi.dmdt(v=x, m=y), x)
                 dgdy = sym.diff(self.model.kvsi.dmdt(v=x, m=y), y)
+            print(type(dfdx))
             j = np.array([[np.float(dfdx.subs([(x, v), (y, l)])), 
                            np.float(dfdy.subs([(x, v), (y, l)]))], 
                           [np.float(dgdx.subs([(x, v), (y, l)])), 

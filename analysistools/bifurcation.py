@@ -411,7 +411,8 @@ class AttractorAnalysis:
         date: str = f'{now.year}_{now.month}_{now.day}'
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
-        res_p: Path = p / 'results' / 'bifurcation' / 'attractor_time' / f'{self.model_name}'
+        dicname = f'{vargs[0]}_{vargs[1]}_{largs[0]}_{largs[1]}'
+        res_p: Path = p / 'results' / 'bifurcation' / 'attractor_time' / dicname / f'{self.model_name}'
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
@@ -427,6 +428,17 @@ class AttractorAnalysis:
         with Pool(processes=ncore) as pool:
             pool.map(self.singleprocess, args)
 
+    def load_data(self, date, filename, ncore, vrange, lrange):
+        p: Path = Path.cwd().parents[0]
+        dicname = f'{vrange[0]}_{vrange[1]}_{lrange[0]}_{lrange[1]}'
+        res_p: Path = p / 'results' / 'bifurcation' / 'attractor_time' / dicname / f'{self.model_name}'
+        with open(res_p/f'{date}_{filename}.pickle_0.pickle', 'rb') as f:
+            self.res_df = pickle.load(f)
+        for core in range(1, ncore):
+            resname = f'{date}_{filename}.pickle_{core}.pickle'
+            with open(res_p/resname, 'rb') as f:
+                r_df = pickle.load(f)
+            self.res_df = pd.concat([self.res_df, r_df]).sort_index(ascending=False)
 
 class WavePattern:
     def __init__(self, model: str='AN', wavepattern: str='SWS', 

@@ -379,6 +379,7 @@ class AttractorAnalysis:
 
     def singleprocess(self, args):
         core, res_df, self.ca, v_start, res_p, resname = args
+        samp_len = 10
         vini_lst = res_df.columns
         lini_lst = res_df.index
         vatt = self.find_attractor(v_start)
@@ -387,13 +388,24 @@ class AttractorAnalysis:
         elif self.model_name == 'RAN':
             latt = self.model.kvsi.m_inf(v=vatt)
 
+        def _recur(ini, samp_len):
+            s = self.run_odeint(ini, samp_len)
+            try:
+                t_v = np.where(np.abs(s[:, 0]-vatt) < 1.0e-3)[0]
+                t_l = np.where(np.abs(s[:, 1]-latt) < 1.0e-5)[0]
+                t = np.intersect1d(t_v, t_l)[0]
+                return t
+            except IndexError:
+                if samp_len > 100:
+                    raise Exception
+                samp_len = samp_len * 2
+                _recur(ini, samp_len)
+
         for lini in lini_lst:
             for vini in tqdm(vini_lst):
                 ini = [vini, lini]
-                s = self.run_odeint(ini)
-                t_v = np.where(s[:, 0]-vatt < 1.0e-5)[0][0]
-                t_l = np.where(s[:, 1]-latt < 1.0e-5)[0][0]
-                t = np.max([t_v, t_l])
+                t = _recur(ini, samp_len)
+                # t = np.max([t_v, t_l])
                 res_df.loc[lini, vini] = t
         with open(res_p/resname, 'wb') as f:
             pickle.dump(res_df, f)
@@ -412,7 +424,7 @@ class AttractorAnalysis:
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         dicname = f'{ca}_{vargs[0]}_{vargs[1]}_{largs[0]}_{largs[1]}'
-        res_p: Path = p / 'results' / 'bifurcation' / 'attractor_time' / dicname / f'{self.model_name}'
+        res_p: Path = p / 'results' / 'bifurcation' / 'attractor_time' / f'{self.model_name}' / dicname
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)

@@ -278,9 +278,6 @@ class AttractorAnalysis:
 
         self.samp_freq = 10000
 
-    def set_ca(self, ca):
-        self.ca = ca
-
     def dvdt(self, args):
         if self.model_name == 'SAN':
             v, n = args
@@ -319,16 +316,13 @@ class AttractorAnalysis:
                       atol=1.0e-5, rtol=1.0e-5, full_output=True)
         return s
 
-    def find_attractor(self, ca, start_points):
+    def find_attractor(self, start_points):
         def _findroot(func, init):
             sol, _, convergence, _ = scipy.optimize.fsolve(func, init, full_output=1)
             if convergence == 1:
                 return sol
             return np.array([np.nan]*1)
         
-        def _numerical_continuation(func, v_ini: float, ca: float):
-            return _findroot(func(v_ini, ca))
-
         def _func(v: float, ca: float) -> float:
             if self.model_name == 'SAN':
                 l_inf = self.model.kvhh.n_inf(v=v)
@@ -377,31 +371,31 @@ class AttractorAnalysis:
             return nat
         
         for init in start_points:
-            eq = _findroot(func(init, ca))
-            nat = _stability(_jacobian(eq, ca))
+            eq = _findroot(lambda x: _func(x, self.ca), init)[0]
+            nat = _stability(_jacobian(eq, self.ca))
             if nat == 'Stable focus':
                 return eq  # v value at stable focus attractor
         raise Exception('Stabel focus attractor was not found.')
 
     def singleprocess(self, args):
-        core, res_df, ca, v_start, res_p, resname = args
-        vini_lst = df.columns
-        lini_lst = df.index
-        vatt = self.find_attractor(ca, v_start)
+        core, res_df, self.ca, v_start, res_p, resname = args
+        vini_lst = res_df.columns
+        lini_lst = res_df.index
+        vatt = self.find_attractor(v_start)
         if self.model_name == 'SAN':
             latt = self.model.kvhh.n_inf(v=vatt)
         elif self.model_name == 'RAN':
             latt = self.model.kvsi.m_inf(v=vatt)
 
         for lini in lini_lst:
-            for vini in vini_lst:
+            for vini in tqdm(vini_lst):
                 ini = [vini, lini]
                 s = self.run_odeint(ini)
-                t_v = np.where(s[:, 0] < 1.0e-5)
-                t_l = np.where(s[:, 1] < 1.0e-5)
+                t_v = np.where(s[:, 0]-vatt < 1.0e-5)[0][0]
+                t_l = np.where(s[:, 1]-latt < 1.0e-5)[0][0]
                 t = np.max([t_v, t_l])
                 res_df.loc[lini, vini] = t
-        with open(res_p/resname, 'rb') as f:
+        with open(res_p/resname, 'wb') as f:
             pickle.dump(res_df, f)
         
     def multi_singleprocess(self, ncore, filename, vargs, largs, ca, v_start):
@@ -421,6 +415,7 @@ class AttractorAnalysis:
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
+        self.model.set_params(param)
         v_lst = np.linspace(vargs[0], vargs[1], vargs[2])
         l_lst = np.linspace(largs[0], largs[1], vargs[2])
 
@@ -429,6 +424,8 @@ class AttractorAnalysis:
             res_df = pd.DataFrame(index=ll_lst, columns=v_lst)
             resname = f'{date}_{filename}_{core}.pickle'
             args.append((core, res_df, ca, v_start, res_p, resname))
+        with Pool(processes=ncore) as pool:
+            pool.map(self.singleprocess, args)
 
 
 class WavePattern:
@@ -843,10 +840,10 @@ if __name__ == '__main__':
 
     elif method == 'attractor_time':
         ncore = int(arg[5])
-        vargs = args[6]
-        largs = args[7]
-        ca = args[8]
-        v_start = args[9]
+        vargs = (float(arg[6]), float(arg[7]), int(arg[8]))
+        largs = (float(arg[9]), float(arg[10]), int(arg[11]))
+        ca = float(arg[12])
+        v_start = (float(arg[13]), float(arg[14]))
         if model == 'RAN':
             channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
             model_name = 'RAN'

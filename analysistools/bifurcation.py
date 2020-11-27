@@ -65,7 +65,7 @@ class Analysis:
         self.l_pad = 0.1
         self.v_pad = 10
 
-    def ode_bifur(self, channel: str, magnif: float) -> np.ndarray:
+    def change_params(self, channel:str, magnif: float) -> None:
         if channel != 'g_nal' and channel != 'g_kl':
             p = copy(self.param)
             p[channel] = p[channel] * magnif
@@ -83,17 +83,26 @@ class Analysis:
                 gxl = copy(gkl)
                 gxl = gxl * magnif
                 self.model.leak.set_gk(gxl)
+
+    def ode_bifur(self, channel: Optional[str]=None, 
+                  magnif: Optional[float]=None) -> np.ndarray:
+        if channel is not None:
+            self.change_param(channel, magnif)
         s, _ = self.model.run_odeint(samp_freq=self.samp_freq)
         return s
 
     def set_s(self, s: np.ndarray, 
-              st: int, en: int) -> None:
-        self.s = s
+              st: int, en: int, 
+              channel: Optional[str]=None, 
+              magnif: Optional[float]=None) -> None:
+        self.s = self.ode_bifur(channel, magnif)
         self.st = st
         self.en = en
 
     def nullcline(self, t: int, ax: plt.axes, 
-                  mode='t', flow=False) -> plt.axes:
+                  mode='t', flow=False, 
+                  channel: Optional[str]=None, 
+                  magnif: Optional[float]=None) -> plt.axes:
         lmin = self.s[self.st:self.en, 1].min() - self.l_pad
         lmax = self.s[self.st:self.en, 1].max() + self.l_pad
         vmin = self.s[self.st:self.en, 0].min() - self.v_pad
@@ -282,7 +291,7 @@ class AttractorAnalysis:
 
         self.samp_freq = 10000
 
-    def dvdt(self, args):
+    def dvdt(self, args: List) -> float:
         if self.model_name == 'SAN':
             v, n = args
             return ((-10.0*self.model.params.area 
@@ -302,7 +311,7 @@ class AttractorAnalysis:
                 + self.model.leak.i(v))) 
                 / (10.0*self.model.params.cm*self.model.params.area))
     
-    def diff_op(self, args, time):
+    def diff_op(self, args: List, time: np.ndarray) -> List:
         if self.model_name == 'SAN':
             v, n = args
             dvdt = self.dvdt(args)
@@ -314,14 +323,33 @@ class AttractorAnalysis:
             dmdt = self.model.kvsi.dmdt(v=v, m=m)
             return [dvdt, dmdt]
 
-    def run_odeint(self, ini, samp_len=10):
+    def run_odeint(self, ini: List, samp_len: int=10):
         solvetime = np.linspace(1, 1000*samp_len, self.samp_freq*samp_len)
         s, _ = odeint(self.diff_op, ini, solvetime, 
                       atol=1.0e-5, rtol=1.0e-5, full_output=True)
         return s
 
-    def find_attractor(self, start_points):
-        def _findroot(func, init):
+    def change_param(self, channel: str, magnif: float) -> None:
+        if channel != 'g_nal' and channel != 'g_kl':
+            p = copy(self.param)
+            p[channel] = p[channel] * magnif
+            self.model.set_params(p)
+        else:
+            self.model.set_params(self.param)
+            self.model.leak.set_div()
+            gnal = self.model.leak.gnal
+            gkl = self.model.leak.gkl
+            if channel == 'g_nal':
+                gxl = copy(gnal)
+                gxl = gxl * magnif
+                self.model.leak.set_gna(gxl)
+            elif channel == 'g_kl':
+                gxl = copy(gkl)
+                gxl = gxl * magnif
+                self.model.leak.set_gk(gxl)
+
+    def find_attractor(self, start_points: Tuple) -> float:
+        def _findroot(func, init: float) -> np.ndarray:
             sol, _, convergence, _ = scipy.optimize.fsolve(func, init, full_output=1)
             if convergence == 1:
                 return sol
@@ -340,7 +368,7 @@ class AttractorAnalysis:
                 })
             return dvdt
 
-        def _jacobian(v, ca):
+        def _jacobian(v: float, ca: float) -> np.ndarray:
             x, y = sym.symbols('x, y')
             if self.model_name == 'SAN':
                 l = self.model.kvhh.n_inf(v)
@@ -360,7 +388,7 @@ class AttractorAnalysis:
                            np.float(dgdy.subs([(x, v), (y, l)]))]])
             return j
 
-        def _stability(j) -> str:
+        def _stability(j: np.ndarray) -> str:
             det = np.linalg.det(j)
             trace = np.matrix.trace(j)
             if np.isclose(trace, 0) and np.isclose(det, 0):
@@ -381,18 +409,20 @@ class AttractorAnalysis:
                 return eq  # v value at stable focus attractor
         raise Exception('Stabel focus attractor was not found.')
 
-    def singleprocess(self, args):
-        core, res_df, self.ca, v_start, res_p, resname = args
+    def singleprocess(self, args: Tuple) -> None:
+        core, res_df, self.ca, v_start, res_p, resname, channel, magnif = args
         samp_len = 10
         vini_lst = res_df.columns
         lini_lst = res_df.index
+        if channel is not None:
+            self.change_param(channel, magnif)
         vatt = self.find_attractor(v_start)
         if self.model_name == 'SAN':
             latt = self.model.kvhh.n_inf(v=vatt)
         elif self.model_name == 'RAN':
             latt = self.model.kvsi.m_inf(v=vatt)
 
-        def _recur(ini, samp_len):
+        def _recur(ini: List, samp_len: str) -> float:
             s = self.run_odeint(ini, samp_len)
             try:
                 t_v = np.where(np.abs(s[:, 0]-vatt) < 1.0e-3)[0]
@@ -414,7 +444,11 @@ class AttractorAnalysis:
         with open(res_p/resname, 'wb') as f:
             pickle.dump(res_df, f)
         
-    def multi_singleprocess(self, ncore, filename, vargs, largs, ca, v_start):
+    def multi_singleprocess(self, ncore: int, filename: str, 
+                            vargs: List, largs: List , 
+                            ca: float, v_start: Tuple, 
+                            channel: Optional[str]=None, 
+                            magnif: Optional[float]=None) -> None:
         """
         Parameters
         ----------
@@ -427,7 +461,10 @@ class AttractorAnalysis:
         date: str = f'{now.year}_{now.month}_{now.day}'
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
-        dicname = f'{ca}_{vargs[0]}_{vargs[1]}_{largs[0]}_{largs[1]}'
+        if channel is None:
+            dicname = f'{ca}_{vargs[0]}_{vargs[1]}_{largs[0]}_{largs[1]}'
+        else:
+            dicname = f'{ca}_{vargs[0]}_{vargs[1]}_{largs[0]}_{largs[1]}_{channel}_{magnif}'
         res_p: Path = p / 'results' / 'bifurcation' / 'attractor_time' / f'{self.model_name}' / dicname
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
@@ -438,15 +475,22 @@ class AttractorAnalysis:
 
         args: List = []
         for core, ll_lst in enumerate(np.array_split(l_lst, ncore)):
-            res_df = pd.DataFrame(index=ll_lst, columns=v_lst)
+            res_df = pd.DataFrame(index=ll_lst, columns=v_lst) 
             resname = f'{date}_{filename}_{core}.pickle'
-            args.append((core, res_df, ca, v_start, res_p, resname))
+            args.append((core, res_df, ca, v_start, res_p, resname, channel, magnif))
         with Pool(processes=ncore) as pool:
             pool.map(self.singleprocess, args)
 
-    def load_data(self, date, filename, ncore, ca, vrange, lrange):
+    def load_data(self, date: str, filename: str,  
+                  ncore: int, ca: float, 
+                  vrange: List, lrange: List, 
+                  channel: Optional[str]=None, 
+                  magnif: Optional[float]=None) -> None:
         p: Path = Path.cwd().parents[0]
-        dicname = f'{ca}_{vrange[0]}_{vrange[1]}_{lrange[0]}_{lrange[1]}'
+        if channel is None:
+            dicname = f'{ca}_{vrange[0]}_{vrange[1]}_{lrange[0]}_{lrange[1]}'
+        else:
+            dicname = f'{ca}_{vargs[0]}_{vargs[1]}_{largs[0]}_{largs[1]}_{channel}_{magnif}'
         res_p: Path = p / 'results' / 'bifurcation' / 'attractor_time' / f'{self.model_name}' / dicname
         with open(res_p/f'{date}_{filename}.pickle_0.pickle', 'rb') as f:
             self.res_df = pickle.load(f)

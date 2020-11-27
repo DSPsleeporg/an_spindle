@@ -36,7 +36,7 @@ import scipy.optimize
 from scipy.stats import gaussian_kde
 import sympy as sym
 from tqdm import tqdm
-from typing import Dict, List, Iterator, Optional
+from typing import Dict, List, Tuple, Iterator, Optional
 
 import anmodel
 import analysistools
@@ -87,12 +87,11 @@ class Analysis:
     def ode_bifur(self, channel: Optional[str]=None, 
                   magnif: Optional[float]=None) -> np.ndarray:
         if channel is not None:
-            self.change_param(channel, magnif)
+            self.change_params(channel, magnif)
         s, _ = self.model.run_odeint(samp_freq=self.samp_freq)
         return s
 
-    def set_s(self, s: np.ndarray, 
-              st: int, en: int, 
+    def set_s(self, st: int, en: int, 
               channel: Optional[str]=None, 
               magnif: Optional[float]=None) -> None:
         self.s = self.ode_bifur(channel, magnif)
@@ -468,8 +467,8 @@ class AttractorAnalysis:
         res_p: Path = p / 'results' / 'bifurcation' / 'attractor_time' / f'{self.model_name}' / dicname
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
-            param = pickle.load(f)
-        self.model.set_params(param)
+            self.param = pickle.load(f)
+        self.model.set_params(self.param)
         v_lst = np.linspace(vargs[0], vargs[1], vargs[2])
         l_lst = np.linspace(largs[0], largs[1], vargs[2])
 

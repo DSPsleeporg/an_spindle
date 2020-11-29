@@ -489,7 +489,7 @@ class AttractorAnalysis:
         if channel is None:
             dicname = f'{ca}_{vrange[0]}_{vrange[1]}_{lrange[0]}_{lrange[1]}'
         else:
-            dicname = f'{ca}_{vargs[0]}_{vargs[1]}_{largs[0]}_{largs[1]}_{channel}_{magnif}'
+            dicname = f'{ca}_{vrange[0]}_{vrange[1]}_{lrange[0]}_{lrange[1]}_{channel}_{magnif}'
         res_p: Path = p / 'results' / 'bifurcation' / 'attractor_time' / f'{self.model_name}' / dicname
         with open(res_p/f'{date}_{filename}.pickle_0.pickle', 'rb') as f:
             self.res_df = pickle.load(f)

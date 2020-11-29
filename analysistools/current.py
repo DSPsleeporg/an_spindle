@@ -25,6 +25,7 @@ os.environ['MKL_NUM_THREADS'] = '1'
 sys.path.append('../')
 sys.path.append('../anmodel')
 
+from copy import copy
 from datetime import datetime
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
@@ -45,6 +46,7 @@ class AN:
     def __init__(self, wavepattern: str, 
                  ion: bool=False, concentration: Dict=None) -> None:
         self.model = anmodel.models.ANmodel()
+        self.model_name = 'AN'
         self.cnst = anmodel.params.Constants()
         self.fs = anmodel.analysis.FreqSpike()
         self.wavepattern = wavepattern
@@ -514,6 +516,7 @@ class AN:
 class SAN:
     def __init__(self, ion: bool=False, concentration: Dict=None) -> None:
         self.model = anmodel.models.SANmodel()
+        self.model_name = 'SAN'
         self.fs = anmodel.analysis.FreqSpike()
         self.wavepattern = 'SWS'
 
@@ -772,6 +775,7 @@ class RAN:
     def __init__(self, ion: bool=False, concentration: Dict=None) -> None:
         channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
         self.model = anmodel.models.Xmodel(channel_bool)
+        self.model_name = 'RAN'
         self.fs = anmodel.analysis.FreqSpike()
         self.wavepattern = 'SPN'
 
@@ -938,7 +942,7 @@ class RAN:
                 'kca': i_kca_p, 
                 'naleak': i_nal_p, 
                 'cav': i_cav_p, 
-                'nap': i_nap_p,
+                'nap': i_nap_p, 
             }
             for j in range(len(e)-1):
                 tlst = np.linspace(e[j], e[j+1], 1000, dtype=int)
@@ -1055,7 +1059,7 @@ class RAN:
             'kca', 
             'naleak', 
             'cav', 
-            'nap',
+            'nap', 
         ]
         res_b_df = pd.DataFrame([], columns=ch_lst, index=param_df.index)
         res_s_df = pd.DataFrame([], columns=ch_lst, index=param_df.index)
@@ -1079,7 +1083,7 @@ class RAN:
                 'kca': i_kca_p, 
                 'naleak': i_nal_p, 
                 'cav': i_cav_p, 
-                'nap': i_nap_p,
+                'nap': i_nap_p, 
             }
             for ch in ch_lst:
                 cur_p = p_data_dic[ch]
@@ -1109,6 +1113,64 @@ class RAN:
         for bs_df in [self.b_out, self.b_in, self.s_out, self.s_in]:
             bs_df.columns = ['param_index', 'channel', 'value']
             bs_df.replace('kvsi', 'kvsi/kvhh', inplace=True)
+
+    def current_bifurcation_rep(self, filename: str, channel: str, diff: int=100) -> None:
+        norm = analysistools.norm_fre_mp.Normalization(model='RAN', wavepattern='SPN')
+        p: Path = Path.cwd().parents[0]
+        data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
+        res_b_name: str = f'{filename}_{channel}_{diff}_burst.pickle'
+        res_s_name: str = f'{filename}_{channel}_{diff}_silent.pickle'
+        res_p: Path = p / 'results' / 'current' / 'bifurcation_rep' / f'{self.model_name}'
+        res_p.mkdir(parents=True, exist_ok=True)
+        with open(data_p/filename, 'rb') as f:
+            param = pickle.load(f)
+        self.set_params(param)
+        self.model.set_params(param)
+        if channel == 'g_nal' or channel == 'g_kl':
+            self.model.leak.set_div()
+            param.loc['g_nal'] = self.model.leak.gnal
+            param.loc['g_kl'] = self.model.leak.gkl
+        else:
+            self.model.leak.reset_div()
+        
+        ch_lst = ['kleak', 'kvsi', 'kca', 
+                   'naleak', 'cav', 'nap']
+        start = 1000 - diff
+        end = 1000 + diff + 1
+        res_b_df = pd.DataFrame([], columns=ch_lst, index=np.arange(start, end))
+        res_s_df = pd.DataFrame([], columns=ch_lst, index=np.arange(start, end))
+        for i in tqdm(res_b_df.index):
+            param_c = copy(param)
+            param_c[channel] = param_c[channel] * i / 1000
+            e: List[int] = norm.norm_spn(param_c, channel)
+            try:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+            except TypeError:
+                continue
+            s, _ = self.model.run_odeint(samp_len=samp_len)
+            v_sq = self.fs.square_wave(s[e[0]:e[6], 0], spike='bottom')
+            ip_out, ip_in = self.get_p(s[e[0]:e[6], :])
+            i_kl_p, i_kvsi_p, i_kca_p = ip_out
+            i_nal_p, i_cav_p, i_nap_p = ip_in
+            p_data_dic = {
+                'kleak': i_kl_p, 
+                'kvsi': i_kvsi_p, 
+                'kca': i_kca_p, 
+                'naleak': i_nal_p, 
+                'cav': i_cav_p, 
+                'nap': i_nap_p, 
+            }
+            for ch in ch_lst:
+                cur_p = p_data_dic[ch]
+                cur_p_burst = cur_p[v_sq.astype(np.bool)]
+                cur_p_silent = cur_p[np.logical_not(v_sq.astype(np.bool))]
+                res_b_df.loc[i, ch] = cur_p_burst.mean()
+                res_s_df.loc[i, ch] = cur_p_silent.mean()
+
+        with open(res_p/res_b_name, 'wb') as f:
+            pickle.dump(res_b_df, f)
+        with open(res_p/res_s_name, 'wb') as f:
+            pickle.dump(res_s_df, f)
 
 
 if __name__ == '__main__':
@@ -1145,3 +1207,12 @@ if __name__ == '__main__':
             analysistools.current.SAN().b_s_ratio(filename)
         elif model == 'RAN':
             analysistools.current.RAN().b_s_ratio(filename)
+    elif method == 'cur_bifur_rep':
+        channel = arg[5]
+        diff = int(arg[6])
+        if model == 'AN':
+            pass
+        elif model == 'SAN':
+            pass
+        elif model == 'RAN':
+            analysistools.current.RAN().current_bifurcation_rep(filename, channel, diff)

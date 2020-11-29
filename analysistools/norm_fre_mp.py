@@ -343,7 +343,7 @@ class Normalization:
         plt.figure(figsize=(20, 20))
         sns.heatmap(hm_ca_df.values.tolist(), cmap='jet')
         plt.savefig(res_p/f'{self.wavepattern}_{self.model_name}_ca_hm.png')
-    
+
     def time_bifurcation_rep(self, filename: str, channel: str, diff: int=100) -> None:
         """ Calculate time points for 1st~6th burst firing for 
         the representative parameter set through bifurcation.
@@ -355,15 +355,16 @@ class Normalization:
         """
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
-        resname: str = f'{filename}_{diff}_time.pickle'
+        resname: str = f'{filename}_{channel}_{diff}_time.pickle'
         res_p: Path = p / 'results' / 'normalization_mp_ca' / 'bifurcation_rep' / f'{self.model_name}'
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
             param = pickle.load(f)
         self.model.set_params(param)
-        self.model.leak.set_div()
-        param.loc['g_nal'] = self.model.leak.gnal
-        param.loc['g_kl'] = self.model.leak.gkl
+        if channel == 'g_nal' or channel == 'g_kl':
+            self.model.leak.set_div()
+            param.loc['g_nal'] = self.model.leak.gnal
+            param.loc['g_kl'] = self.model.leak.gkl
 
         start = 1000 - diff
         end = 1000 + diff + 1

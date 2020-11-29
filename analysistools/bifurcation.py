@@ -199,7 +199,6 @@ class Analysis:
                 dfdy = sym.diff(self.model.dvdt({'v': x, 'm_kvsi': y, 'ca': ca}), y)
                 dgdx = sym.diff(self.model.kvsi.dmdt(v=x, m=y), x)
                 dgdy = sym.diff(self.model.kvsi.dmdt(v=x, m=y), y)
-            print(type(dfdx))
             j = np.array([[np.float(dfdx.subs([(x, v), (y, l)])), 
                            np.float(dfdy.subs([(x, v), (y, l)]))], 
                           [np.float(dgdx.subs([(x, v), (y, l)])), 
@@ -915,6 +914,12 @@ if __name__ == '__main__':
         largs = (float(arg[9]), float(arg[10]), int(arg[11]))
         ca = float(arg[12])
         v_start = (float(arg[13]), float(arg[14]))
+        try:
+            channel = arg[15]
+            magnif = float(arg[16])
+        except IndexError:
+            channel = None
+            magnif = None
         if model == 'RAN':
             channel_bool = [1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1]
             model_name = 'RAN'
@@ -929,7 +934,7 @@ if __name__ == '__main__':
                 model=model, 
                 wavepattern=wavepattern,
             )
-        at.multi_singleprocess(ncore, filename, vargs, largs, ca, v_start)
+        at.multi_singleprocess(ncore, filename, vargs, largs, ca, v_start, channel, magnif)
 
     elif method == 'plot':
         channel = arg[5]

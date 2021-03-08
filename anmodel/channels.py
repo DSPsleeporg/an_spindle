@@ -920,7 +920,7 @@ class NaP(Base):
         I = g * m^3  * (v - e).
         m : activation variable (steady state)
         v : membrane potential
-        e : equiribrium potential (for potassium ion)
+        e : equiribrium potential (for sodium ion)
 
         Parameters
         ----------

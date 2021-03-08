@@ -234,6 +234,7 @@ class Normalization:
         if channel != 'g_nal' and channel != 'g_kl' and channel2 != 'g_nal' and channel2 != 'g_kl':
             self.model.leak.reset_div()
         else:
+            self.model.leak.set_div()
             self.model.leak.set_gk(param['g_kl'])
             self.model.leak.set_gna(param['g_nal'])
 

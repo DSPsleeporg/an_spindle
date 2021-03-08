@@ -120,7 +120,10 @@ class WaveCheck:
         if np.any(np.isinf(v)) or np.any(np.isnan(v)):
             return self.wave_pattern.EXCLUDED
         detv: np.ndarray = signal.detrend(v)
-        max_potential: float = max(detv)
+        max_potential: float = max(np.abs(detv))
+        if 200 < max_potential:
+            return self.wave_pattern.EXCLUDED
+
         f: np.ndarray  # Array of sample frequencies
         spw: np.ndarray  # Array of power spectral density or power spectrum
         f, spw = periodogram(detv, fs=self.samp_freq)
@@ -140,9 +143,7 @@ class WaveCheck:
         # if vmin_silent > vmin_burst: # doesn't need .iloc[0]?
         #     return self.wave_pattern.SPN
 
-        if 200 < max_potential:
-            return self.wave_pattern.EXCLUDED
-        elif (maxfre < 0.2) or (numfire < 5*2):
+        if (maxfre < 0.2) or (numfire < 5*2):
             return self.wave_pattern.RESTING
         elif (0.2 < maxfre < 10.2) and (ave_revspike_per_burst>2):
             if vmin_silent > vmin_burst:

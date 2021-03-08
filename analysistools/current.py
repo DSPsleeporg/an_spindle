@@ -803,25 +803,35 @@ class RAN:
 
     def get_p(self, s: np.ndarray) -> List[np.ndarray]:
         i_lst = self.get(s)
-        i_leak = i_lst[0]
-        i_kl = i_lst[1]
-        i_nal = i_lst[2]
-        i_kvsi = i_lst[3]
-        i_cav = i_lst[4]
-        i_nap = i_lst[5]
-        i_kca = i_lst[6]
+        # i_leak = i_lst[0]
+        # i_kl = i_lst[1]
+        # i_nal = i_lst[2]
+        # i_kvsi = i_lst[3]
+        # i_cav = i_lst[4]
+        # i_nap = i_lst[5]
+        # i_kca = i_lst[6]
+        i_ex_tot = np.sum(np.array(ip)+np.abs(np.array(ip)), axis=0)
+        i_in_tot = np.sum(np.array(ip)-np.abs(np.array(ip)), axis=0)
+        i_ex_p_lst = []
+        i_in_p_lst = []
+        for i, cur in enumerate(i_lst):
+            i_ex_p = np.sum(np.array(cur)+np.abs(np.array(cur)), axis=0) / i_ex_tot
+            i_in_p = np.sum(np.array(cur)-np.abs(np.array(cur)), axis=0) / i_in_tot
+            i_ex_p_lst.append(i_ex_p)
+            i_in_p_lst.append(i_in_p)
+        return i_in_p_lst, i_ex_p_lst
 
-        i_out = i_kl + i_kvsi + i_kca
-        i_in = i_nal + i_cav + i_nap
-        i_kl_p = i_kl / i_out
-        i_kvsi_p = i_kvsi / i_out
-        i_kca_p = i_kca / i_out
-        i_nal_p = i_nal / i_in
-        i_cav_p = i_cav / i_in
-        i_nap_p = i_nap / i_in
-        ip_out = [i_kl_p, i_kvsi_p, i_kca_p]
-        ip_in = [i_nal_p, i_cav_p, i_nap_p]
-        return ip_out, ip_in
+        # i_out = i_kl + i_kvsi + i_kca
+        # i_in = i_nal + i_cav + i_nap
+        # i_kl_p = i_kl / i_out
+        # i_kvsi_p = i_kvsi / i_out
+        # i_kca_p = i_kca / i_out
+        # i_nal_p = i_nal / i_in
+        # i_cav_p = i_cav / i_in
+        # i_nap_p = i_nap / i_in
+        # ip_out = [i_kl_p, i_kvsi_p, i_kca_p]
+        # ip_in = [i_nal_p, i_cav_p, i_nap_p]
+        # return ip_out, ip_in
 
     def p_heatmap(self, filename: str):
         now = datetime.now()
@@ -1114,12 +1124,13 @@ class RAN:
             bs_df.columns = ['param_index', 'channel', 'value']
             bs_df.replace('kvsi', 'kvsi/kvhh', inplace=True)
 
-    def current_bifurcation_rep(self, filename: str, channel: str, diff: int=100) -> None:
+    def current_bifurcation_rep(self, filename: str, channel: str, diff: int=100, 
+                                mode: str='proportion') -> None:
         norm = analysistools.norm_fre_mp.Normalization(model='RAN', wavepattern='SPN')
         p: Path = Path.cwd().parents[0]
         data_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
-        res_b_name: str = f'{filename}_{channel}_{diff}_burst.pickle'
-        res_s_name: str = f'{filename}_{channel}_{diff}_silent.pickle'
+        res_b_name: str = f'{filename}_{channel}_{diff}_{mode}_burst.pickle'
+        res_s_name: str = f'{filename}_{channel}_{diff}_{mode}_silent.pickle'
         res_p: Path = p / 'results' / 'current' / 'bifurcation_rep' / f'{self.model_name}'
         res_p.mkdir(parents=True, exist_ok=True)
         with open(data_p/filename, 'rb') as f:
@@ -1132,9 +1143,29 @@ class RAN:
             param.loc['g_kl'] = self.model.leak.gkl
         else:
             self.model.leak.reset_div()
-        
         ch_lst = ['kleak', 'kvsi', 'kca', 
                    'naleak', 'cav', 'nap']
+
+        if mode == 'value':
+            e: List[int] = norm.norm_spn(param, channel)
+            s, _ = self.model.run_odeint()
+            v_sq = self.fs.square_wave(s[e[0]:e[6], 0], spike='bottom')
+            i_lst_o = self.get(s[e[0]:e[6], :])
+            i_leak_o, i_kl_o, i_nal_o, i_kvsi_o, i_cav_o, i_nap_o, i_kca_o = i_lst_o
+            original_dic = {
+                'kleak': i_kl_o, 
+                'kvsi': i_kvsi_o, 
+                'kca': i_kca_o, 
+                'naleak': i_nal_o, 
+                'cav': i_cav_o, 
+                'nap': i_nap_o, 
+            }
+            for ch in ch_lst:
+                i_o = original_dic[ch]
+                i_o_burst = i_o[v_sq.astype(np.bool)]
+                i_o_silent = i_o[np.logical_not(v_sq.astype(np.bool))]
+                original_dic[ch] = [i_o_burst, i_o_silent]
+        
         start = 1000 - diff
         end = 1000 + diff + 1
         res_b_df = pd.DataFrame([], columns=ch_lst, index=np.arange(start, end))
@@ -1142,6 +1173,13 @@ class RAN:
         for i in tqdm(res_b_df.index):
             param_c = copy(param)
             param_c[channel] = param_c[channel] * i / 1000
+            self.set_params(param_c.drop(['g_kl', 'g_nal']))
+            self.model.set_params(param_c.drop(['g_kl', 'g_nal']))
+            if channel == 'g_kl' or channel == 'g_nal':
+                self.leak.set_gk(param_c['g_kl'])
+                self.leak.set_gna(param_c['g_nal'])
+                self.model.leak.set_gk(param_c['g_kl'])
+                self.model.leak.set_gna(param_c['g_nal'])
             e: List[int] = norm.norm_spn(param_c, channel)
             try:
                 samp_len = 10 + ((5000+e[6])//10000) * 10
@@ -1149,23 +1187,44 @@ class RAN:
                 continue
             s, _ = self.model.run_odeint(samp_len=samp_len)
             v_sq = self.fs.square_wave(s[e[0]:e[6], 0], spike='bottom')
-            ip_out, ip_in = self.get_p(s[e[0]:e[6], :])
-            i_kl_p, i_kvsi_p, i_kca_p = ip_out
-            i_nal_p, i_cav_p, i_nap_p = ip_in
-            p_data_dic = {
-                'kleak': i_kl_p, 
-                'kvsi': i_kvsi_p, 
-                'kca': i_kca_p, 
-                'naleak': i_nal_p, 
-                'cav': i_cav_p, 
-                'nap': i_nap_p, 
-            }
-            for ch in ch_lst:
-                cur_p = p_data_dic[ch]
-                cur_p_burst = cur_p[v_sq.astype(np.bool)]
-                cur_p_silent = cur_p[np.logical_not(v_sq.astype(np.bool))]
-                res_b_df.loc[i, ch] = cur_p_burst.mean()
-                res_s_df.loc[i, ch] = cur_p_silent.mean()
+            if mode == 'proportion':  # proportion against whole inward/outward current
+                ip_out, ip_in = self.get_p(s[e[0]:e[6], :])
+                i_kl_p, i_kvsi_p, i_kca_p = ip_out
+                i_nal_p, i_cav_p, i_nap_p = ip_in
+                data_dic = {
+                    'kleak': i_kl_p, 
+                    'kvsi': i_kvsi_p, 
+                    'kca': i_kca_p, 
+                    'naleak': i_nal_p, 
+                    'cav': i_cav_p, 
+                    'nap': i_nap_p, 
+                }
+                for ch in ch_lst:
+                    cur_p = data_dic[ch]
+                    cur_p_burst = cur_p[v_sq.astype(np.bool)]
+                    cur_p_silent = cur_p[np.logical_not(v_sq.astype(np.bool))]
+                    res_b_df.loc[i, ch] = cur_p_burst.mean()
+                    res_s_df.loc[i, ch] = cur_p_silent.mean()
+            elif mode == 'value':  # proportion against initial current value
+                i_lst = self.get(s[e[0]:e[6], :])
+                i_leak, i_kl, i_nal, i_kvsi, i_cav, i_nap, i_kca = i_lst
+                data_dic = {
+                    'kleak': i_kl, 
+                    'kvsi': i_kvsi, 
+                    'kca': i_kca, 
+                    'naleak': i_nal, 
+                    'cav': i_cav, 
+                    'nap': i_nap, 
+                }
+                for ch in ch_lst:
+                    cur = data_dic[ch]
+                    i_burst = cur[v_sq.astype(np.bool)]
+                    i_silent = cur[np.logical_not(v_sq.astype(np.bool))]
+                    i_o_burst, i_o_silent = original_dic[ch]
+                    i_p_burst = i_burst.mean() / i_o_burst.mean()
+                    i_p_silent = i_silent.mean() / i_o_silent.mean()
+                    res_b_df.loc[i, ch] = i_p_burst
+                    res_s_df.loc[i, ch] = i_p_silent
 
         with open(res_p/res_b_name, 'wb') as f:
             pickle.dump(res_b_df, f)
@@ -1221,9 +1280,10 @@ if __name__ == '__main__':
     elif method == 'cur_bifur_rep':
         channel = arg[5]
         diff = int(arg[6])
+        mode = arg[7]
         if model == 'AN':
             pass
         elif model == 'SAN':
             pass
         elif model == 'RAN':
-            analysistools.current.RAN().current_bifurcation_rep(filename, channel, diff)
+            analysistools.current.RAN().current_bifurcation_rep(filename, channel, diff, mode)

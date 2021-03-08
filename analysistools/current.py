@@ -90,46 +90,56 @@ class AN:
 
     def get_p(self, s: np.ndarray) -> List[np.ndarray]:
         i_lst = self.get(s)
-        i_leak = i_lst[0]
-        i_kl = i_lst[1]
-        i_nal = i_lst[2]
-        i_nav = i_lst[3]
-        i_kvhh = i_lst[4]
-        i_kva = i_lst[5]
-        i_kvsi = i_lst[6]
-        i_cav = i_lst[7]
-        i_nap = i_lst[8]
-        i_kca = i_lst[9]
-        i_kir = i_lst[10]
-        i_ampar = i_lst[11]
-        i_nmdar = i_lst[12]
-        i_gabar = i_lst[13]
+        # i_leak = i_lst[0]
+        # i_kl = i_lst[1]
+        # i_nal = i_lst[2]
+        # i_nav = i_lst[3]
+        # i_kvhh = i_lst[4]
+        # i_kva = i_lst[5]
+        # i_kvsi = i_lst[6]
+        # i_cav = i_lst[7]
+        # i_nap = i_lst[8]
+        # i_kca = i_lst[9]
+        # i_kir = i_lst[10]
+        # i_ampar = i_lst[11]
+        # i_nmdar = i_lst[12]
+        # i_gabar = i_lst[13]
+        i_ex_tot = np.sum(np.array(i_lst)+np.abs(np.array(i_lst)), axis=0)
+        i_in_tot = np.sum(np.array(i_lst)-np.abs(np.array(i_lst)), axis=0)
+        i_ex_p_lst = []
+        i_in_p_lst = []
+        for i, cur in enumerate(i_lst):
+            i_ex_p = (cur+np.abs(cur)) / i_ex_tot
+            i_in_p = (cur-np.abs(cur)) / i_in_tot
+            i_ex_p_lst.append(i_ex_p)
+            i_in_p_lst.append(i_in_p)
+        return i_in_p_lst, i_ex_p_lst
 
-        i_ampar_in = [i_ampar[i] if s[i, 0]<self.cnst.vAMPAR else 0 for i in range(len(s))]
-        i_ampar_out = [i_ampar[i] if s[i, 0]>self.cnst.vAMPAR else 0 for i in range(len(s))]
-        i_nmdar_in = [i_nmdar[i] if s[i, 0]<self.cnst.vNMDAR else 0 for i in range(len(s))]
-        i_nmdar_out = [i_nmdar[i] if s[i, 0]>self.cnst.vNMDAR else 0 for i in range(len(s))]
-        i_gabar_in = [i_gabar[i] if s[i, 0]<self.cnst.vGABAR else 0 for i in range(len(s))]
-        i_gabar_out = [i_gabar[i] if s[i, 0]>self.cnst.vGABAR else 0 for i in range(len(s))]
+        # i_ampar_in = [i_ampar[i] if s[i, 0]<self.cnst.vAMPAR else 0 for i in range(len(s))]
+        # i_ampar_out = [i_ampar[i] if s[i, 0]>self.cnst.vAMPAR else 0 for i in range(len(s))]
+        # i_nmdar_in = [i_nmdar[i] if s[i, 0]<self.cnst.vNMDAR else 0 for i in range(len(s))]
+        # i_nmdar_out = [i_nmdar[i] if s[i, 0]>self.cnst.vNMDAR else 0 for i in range(len(s))]
+        # i_gabar_in = [i_gabar[i] if s[i, 0]<self.cnst.vGABAR else 0 for i in range(len(s))]
+        # i_gabar_out = [i_gabar[i] if s[i, 0]>self.cnst.vGABAR else 0 for i in range(len(s))]
 
-        i_out = i_kl + i_kvhh + i_kva + i_kvsi + i_kir + i_kca + i_ampar_out + i_nmdar_out + i_gabar_out
-        i_in = i_nal + i_nav + i_cav + i_nap + i_ampar_in + i_nmdar_in + i_gabar_in
-        i_kl_p = i_kl / i_out
-        i_kvhh_p = i_kvhh / i_out
-        i_kva_p = i_kva / i_out
-        i_kvsi_p = i_kvsi / i_out
-        i_kir_p = i_kir / i_out
-        i_kca_p = i_kca / i_out
-        i_ampar_out_p = i_ampar_out / i_out
-        i_nmdar_out_p = i_nmdar_out / i_out
-        i_gabar_out_p = i_gabar_out / i_out
-        i_nal_p = i_nal / i_in
-        i_nav_p = i_nav / i_in
-        i_cav_p = i_cav / i_in
-        i_nap_p = i_nap / i_in
-        i_ampar_in_p = i_ampar_in / i_in
-        i_nmdar_in_p = i_nmdar_in / i_in
-        i_gabar_in_p = i_gabar_in / i_in
+        # i_out = i_kl + i_kvhh + i_kva + i_kvsi + i_kir + i_kca + i_ampar_out + i_nmdar_out + i_gabar_out
+        # i_in = i_nal + i_nav + i_cav + i_nap + i_ampar_in + i_nmdar_in + i_gabar_in
+        # i_kl_p = i_kl / i_out
+        # i_kvhh_p = i_kvhh / i_out
+        # i_kva_p = i_kva / i_out
+        # i_kvsi_p = i_kvsi / i_out
+        # i_kir_p = i_kir / i_out
+        # i_kca_p = i_kca / i_out
+        # i_ampar_out_p = i_ampar_out / i_out
+        # i_nmdar_out_p = i_nmdar_out / i_out
+        # i_gabar_out_p = i_gabar_out / i_out
+        # i_nal_p = i_nal / i_in
+        # i_nav_p = i_nav / i_in
+        # i_cav_p = i_cav / i_in
+        # i_nap_p = i_nap / i_in
+        # i_ampar_in_p = i_ampar_in / i_in
+        # i_nmdar_in_p = i_nmdar_in / i_in
+        # i_gabar_in_p = i_gabar_in / i_in
         
         ip_out = [i_kl_p, i_kvhh_p, i_kva_p, i_kvsi_p, i_kir_p, i_kca_p, i_ampar_out_p, i_nmdar_out_p, i_gabar_out_p]
         ip_in = [i_nal_p, i_nav_p, i_cav_p, i_nap_p, i_ampar_in_p, i_nmdar_in_p, i_gabar_in_p]
@@ -544,25 +554,35 @@ class SAN:
 
     def get_p(self, s: np.ndarray) -> List[np.ndarray]:
         i_lst = self.get(s)
-        i_leak = i_lst[0]
-        i_kl = i_lst[1]
-        i_nal = i_lst[2]
-        i_kvhh = i_lst[3]
-        i_cav = i_lst[4]
-        i_nap = i_lst[5]
-        i_kca = i_lst[6]
+        # i_leak = i_lst[0]
+        # i_kl = i_lst[1]
+        # i_nal = i_lst[2]
+        # i_kvhh = i_lst[3]
+        # i_cav = i_lst[4]
+        # i_nap = i_lst[5]
+        # i_kca = i_lst[6]
+        i_ex_tot = np.sum(np.array(i_lst)+np.abs(np.array(i_lst)), axis=0)
+        i_in_tot = np.sum(np.array(i_lst)-np.abs(np.array(i_lst)), axis=0)
+        i_ex_p_lst = []
+        i_in_p_lst = []
+        for i, cur in enumerate(i_lst):
+            i_ex_p = (cur+np.abs(cur)) / i_ex_tot
+            i_in_p = (cur-np.abs(cur)) / i_in_tot
+            i_ex_p_lst.append(i_ex_p)
+            i_in_p_lst.append(i_in_p)
+        return i_in_p_lst, i_ex_p_lst
 
-        i_out = i_kl + i_kvhh + i_kca
-        i_in = i_nal + i_cav + i_nap
-        i_kl_p = i_kl / i_out
-        i_kvhh_p = i_kvhh / i_out
-        i_kca_p = i_kca / i_out
-        i_nal_p = i_nal / i_in
-        i_cav_p = i_cav / i_in
-        i_nap_p = i_nap / i_in
-        ip_out = [i_kl_p, i_kvhh_p, i_kca_p]
-        ip_in = [i_nal_p, i_cav_p, i_nap_p]
-        return ip_out, ip_in
+        # i_out = i_kl + i_kvhh + i_kca
+        # i_in = i_nal + i_cav + i_nap
+        # i_kl_p = i_kl / i_out
+        # i_kvhh_p = i_kvhh / i_out
+        # i_kca_p = i_kca / i_out
+        # i_nal_p = i_nal / i_in
+        # i_cav_p = i_cav / i_in
+        # i_nap_p = i_nap / i_in
+        # ip_out = [i_kl_p, i_kvhh_p, i_kca_p]
+        # ip_in = [i_nal_p, i_cav_p, i_nap_p]
+        # return ip_out, ip_in
 
     def p_heatmap(self, filename: str):
         now = datetime.now()
@@ -810,13 +830,13 @@ class RAN:
         # i_cav = i_lst[4]
         # i_nap = i_lst[5]
         # i_kca = i_lst[6]
-        i_ex_tot = np.sum(np.array(ip)+np.abs(np.array(ip)), axis=0)
-        i_in_tot = np.sum(np.array(ip)-np.abs(np.array(ip)), axis=0)
+        i_ex_tot = np.sum(np.array(i_lst)+np.abs(np.array(i_lst)), axis=0)
+        i_in_tot = np.sum(np.array(i_lst)-np.abs(np.array(i_lst)), axis=0)
         i_ex_p_lst = []
         i_in_p_lst = []
         for i, cur in enumerate(i_lst):
-            i_ex_p = np.sum(np.array(cur)+np.abs(np.array(cur)), axis=0) / i_ex_tot
-            i_in_p = np.sum(np.array(cur)-np.abs(np.array(cur)), axis=0) / i_in_tot
+            i_ex_p = (cur+np.abs(cur)) / i_ex_tot
+            i_in_p = (cur-np.abs(cur)) / i_in_tot
             i_ex_p_lst.append(i_ex_p)
             i_in_p_lst.append(i_in_p)
         return i_in_p_lst, i_ex_p_lst

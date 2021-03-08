@@ -1172,6 +1172,17 @@ class RAN:
         with open(res_p/res_s_name, 'wb') as f:
             pickle.dump(res_s_df, f)
 
+    def load_bifur_rep(self, filename: str, channel: str, diff: int=100, 
+                       mode: str='proportion') -> None:
+        p: Path = Path.cwd().parents[0]
+        res_p: Path = p / 'results' / 'current' / 'bifurcation_rep' / f'{self.model_name}'
+        res_b_name: str = f'{filename}_{channel}_{diff}_{mode}_burst.pickle'
+        res_s_name: str = f'{filename}_{channel}_{diff}_{mode}_silent.pickle'
+        with open(res_p/res_b_name, 'rb') as f:
+            self.b_df = pickle.load(f)
+        with open(res_p/res_s_name, 'rb') as f:
+            self.s_df = pickle.load(f)
+
 
 if __name__ == '__main__':
     arg: List = sys.argv

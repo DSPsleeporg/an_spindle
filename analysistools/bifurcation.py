@@ -99,7 +99,7 @@ class Analysis:
         self.en = en
 
     def nullcline(self, t: int, ax: plt.axes, 
-                  mode='t', flow=False, 
+                  mode='t', flow=False, density=1, 
                   channel: Optional[str]=None, 
                   magnif: Optional[float]=None) -> plt.axes:
         lmin = self.s[self.st:self.en, 1].min() - self.l_pad
@@ -133,27 +133,27 @@ class Analysis:
         if flow:
             ax.streamplot(np.arange(vmin, vmax, 0.1), 
                           np.arange(lmin, lmax, 0.001), 
-                          dvdt.T, dldt.T, color='gray')
+                          dvdt.T, dldt.T, color='gray', density=density)
         return ax
 
     def diagram(self, ca_range: List, start_points: List[float], 
                 ax: plt.axes, plot: bool=True, stability: bool=True, 
-                legend: bool=False, ) -> plt.axes :
+                legend: bool=False, color=True) -> plt.axes :
         eq_color = {
             'Stable node' : 'C0', 
-            'Unstable node' : 'darkorange', # ff8c00
-            'Saddle' : 'darkolivegreen', # 556b2f
-            'Stable focus' : 'royalblue', # 4169e1
-            'Unstable focus' : 'mediumvioletred', # c71585
+            'Unstable node' : 'limegreen', # ff8c00
+            'Saddle' : 'darkorange', # 556b2f
+            'Stable focus' : 'turquoise', # 4169e1
+            'Unstable focus' : 'slateblue', # c71585
             'Center (Hopf)' : 'C5', 
             'Transcritical (Saddle-Node)' : 'C6'
         }
         eq_linestyle = {
-            'Stable node' : 'dashed', 
+            'Stable node' : 'solid', 
             'Unstable node' : 'solid', 
-            'Saddle' : 'dashdot', 
-            'Stable focus' : 'dashed', 
-            'Unstable focus' : 'dotted', 
+            'Saddle' : 'solid', 
+            'Stable focus' : 'solid', 
+            'Unstable focus' : 'solid', 
             'Center (Hopf)' : 'solid', 
             'Transcritical (Saddle-Node)' : 'solid'
         }
@@ -259,10 +259,16 @@ class Analysis:
                 # ax.plot(ca_space[idx[0]:idx[1]], eq[idx[0]:idx[1]], 
                 #         color=eq_color[n] if n in eq_color else 'k', 
                 #         linestyle=eq_linestyle[n] if n in eq_linestyle else '-')
-                ax.plot(eq[idx[0]:idx[1]], ca_space[idx[0]:idx[1]], 
-                        color=eq_color[n] if n in eq_color else 'k', 
-                        linestyle=eq_linestyle[n] if n in eq_linestyle else '-', 
-                        linewidth=4)
+                if color:
+                    ax.plot(eq[idx[0]:idx[1]], ca_space[idx[0]:idx[1]], 
+                            color=eq_color[n] if n in eq_color else 'k', 
+                            linestyle=eq_linestyle[n] if n in eq_linestyle else '-', 
+                            linewidth=4)
+                else: 
+                    ax.plot(eq[idx[0]:idx[1]], ca_space[idx[0]:idx[1]], 
+                            color='gray', 
+                            linestyle=eq_linestyle[n] if n in eq_linestyle else '-', 
+                            linewidth=4)
         if legend:
             ax.legend([mpatches.Patch(color=eq_color[n]) for n in labels],
                       labels,

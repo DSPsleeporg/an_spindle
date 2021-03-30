@@ -521,6 +521,12 @@ class Normalization:
         with open(res_p/f'{dataname}_g_kleak_{magnif_d}_time.pickle', 'rb') as f:
             self.kl_t_d = pickle.load(f)
             self.kl_fr_d = 1000 / self.kl_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+        with open(res_p/f'{dataname}_g_kvsi_{magnif_u}_time.pickle', 'rb') as f:
+            self.kvsi_t_u = pickle.load(f)
+            self.kvsi_fr_u = 1000 / self.kvsi_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
+        with open(res_p/f'{dataname}_g_kvsi_{magnif_d}_time.pickle', 'rb') as f:
+            self.kvsi_t_d = pickle.load(f)
+            self.kvsi_fr_d = 1000 / self.kvsi_t_d.dropna().diff(axis=1).mean(axis=1) / self.norm_fr
         with open(res_p/f'{dataname}_g_kca_{magnif_u}_time.pickle', 'rb') as f:
             self.kca_t_u = pickle.load(f)
             self.kca_fr_u = 1000 / self.kca_t_u.dropna().diff(axis=1).mean(axis=1) / self.norm_fr

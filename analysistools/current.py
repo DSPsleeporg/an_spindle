@@ -141,9 +141,9 @@ class AN:
         # i_nmdar_in_p = i_nmdar_in / i_in
         # i_gabar_in_p = i_gabar_in / i_in
         
-        ip_out = [i_kl_p, i_kvhh_p, i_kva_p, i_kvsi_p, i_kir_p, i_kca_p, i_ampar_out_p, i_nmdar_out_p, i_gabar_out_p]
-        ip_in = [i_nal_p, i_nav_p, i_cav_p, i_nap_p, i_ampar_in_p, i_nmdar_in_p, i_gabar_in_p]
-        return ip_out, ip_in
+        # ip_out = [i_kl_p, i_kvhh_p, i_kva_p, i_kvsi_p, i_kir_p, i_kca_p, i_ampar_out_p, i_nmdar_out_p, i_gabar_out_p]
+        # ip_in = [i_nal_p, i_nav_p, i_cav_p, i_nap_p, i_ampar_in_p, i_nmdar_in_p, i_gabar_in_p]
+        # return ip_out, ip_in
 
     def p_heatmap(self, filename: str):
         now = datetime.now()

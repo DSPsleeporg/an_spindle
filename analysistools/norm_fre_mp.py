@@ -447,7 +447,8 @@ class Normalization:
                 param_lst.append([m, param_c])
             r_df = res_df.loc[m_lst, :]
             args.append((core, param_lst, r_df, channel1, channel2, res_p, resname))
-         
+        with Pool(processes=ncore) as pool:
+            pool.map(self.two_bifur_singleprocess, args)
 
     def load_two_bifur(self, filename, ch1, ch2, diff, interval):
         p: Path = Path.cwd().parents[0]
@@ -703,7 +704,7 @@ class Normalization:
         data_p: Path = p / 'results' / 'normalization_mp_ca'
         param_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
         with open(data_p/f'{t_filename}', 'rb') as f:
-            t_df = pickle.load(f)
+            t_df = pickle.load(f).dropna(how='all')
         with open(param_p/f'{filename}', 'rb') as f:
             df = pickle.load(f)
         t_df.index = range(len(t_df)) # reset index
@@ -711,13 +712,13 @@ class Normalization:
         if len(t_df) != len(df):
             print('The number of parameter sets is different between time file and parameter file!!!')
             return 0
-        with open(data_p/'incdec_analysis'/'index'/f'{channel}_{tp}.pickle', 'rb') as f:
+        with open(data_p/'incdec_analysis'/'index'/ f'{self.model_name}' / f'{channel}_{tp}.pickle', 'rb') as f:
             idx = pickle.load(f)
         # extract parameter sets in interest
         t_df = t_df.loc[idx]
         df = df.loc[idx]
         resname: str = f'{filename}_{channel}_{tp}.pickle'
-        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'incdec_analysis' / self.model_name / 'calcium'
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'incdec_analysis' / 'calcium' / self.model_name
         res_p.mkdir(parents=True, exist_ok=True)
         ca_max_lst = []
         ca_min_lst = []

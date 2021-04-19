@@ -230,9 +230,11 @@ class Normalization:
         List[int]
             the index (time (ms)) of the 1st~6th ends of burst firing
         """
-        self.model.set_params(param.drop(['g_kl', 'g_nal']))
+        if 'g_nal' in param.index or 'g_kl' in param.index:
+            self.model.set_params(param.drop(['g_kl', 'g_nal']))
         if channel != 'g_nal' and channel != 'g_kl' and channel2 != 'g_nal' and channel2 != 'g_kl':
             self.model.leak.reset_div()
+            self.model.set_params(param)
         else:
             self.model.leak.set_div()
             self.model.leak.set_gk(param['g_kl'])
@@ -445,7 +447,8 @@ class Normalization:
                 param_lst.append([m, param_c])
             r_df = res_df.loc[m_lst, :]
             args.append((core, param_lst, r_df, channel1, channel2, res_p, resname))
-         
+        with Pool(processes=ncore) as pool:
+            pool.map(self.two_bifur_singleprocess, args)
 
     def load_two_bifur(self, filename, ch1, ch2, diff, interval):
         p: Path = Path.cwd().parents[0]
@@ -685,6 +688,65 @@ class Normalization:
         self.diff_df.columns = ['channel', 'inc/dec', 'value']
         self.diff_sig.columns = ['channel', 'inc/dec', 'value']
 
+    def calc_cal(self, filename: str, t_filename: str, 
+                 channel: str, tp: str):
+        """ Calculate calcium max/min/mean for 1st~6th burst firing for 
+        the all parameter sets.
+
+        Parameters
+        ----------
+        filename: str
+            the name of file in which parameter sets are contained
+        tp: str
+            type of the parameter sets (e.g., typical, atypical)
+        """
+        p: Path = Path.cwd().parents[0]
+        data_p: Path = p / 'results' / 'normalization_mp_ca'
+        param_p: Path = p / 'results' / f'{self.wavepattern}_params' / self.model_name
+        with open(data_p/f'{t_filename}', 'rb') as f:
+            t_df = pickle.load(f).dropna(how='all')
+        with open(param_p/f'{filename}', 'rb') as f:
+            df = pickle.load(f)
+        t_df.index = range(len(t_df)) # reset index
+        df.index = range(len(df)) # reset index
+        if len(t_df) != len(df):
+            print('The number of parameter sets is different between time file and parameter file!!!')
+            return 0
+        with open(data_p/'incdec_analysis'/'index'/ f'{self.model_name}' / f'{channel}_{tp}.pickle', 'rb') as f:
+            idx = pickle.load(f)
+        # extract parameter sets in interest
+        t_df = t_df.loc[idx]
+        df = df.loc[idx]
+        resname: str = f'{filename}_{channel}_{tp}.pickle'
+        res_p: Path = p / 'results' / 'normalization_mp_ca' / 'incdec_analysis' / 'calcium' / self.model_name
+        res_p.mkdir(parents=True, exist_ok=True)
+        ca_max_lst = []
+        ca_min_lst = []
+        ca_mean_lst = []
+        for i in tqdm(range(len(t_df))):
+            param = df.iloc[i, :]
+            e = t_df.iloc[i, :]
+            if e[0] == None:
+                pass
+            else:
+                samp_len = 10 + ((5000+e[6])//10000) * 10
+                self.model.set_params(param)
+                s, _ = self.model.run_odeint(samp_freq=1000, samp_len=samp_len)
+                ca: np.ndarray = s[5000:, -1]
+                ca_max_loc = [] # local max
+                ca_min_loc = [] # local min
+                for i in range(6):
+                    ca_max_loc.append(ca[e[i]:e[i+1]].max())
+                    ca_min_loc.append(ca[e[i]:e[i+1]].min())
+                ca_max_lst.append(np.mean(ca_max_loc))
+                ca_min_lst.append(np.mean(ca_min_loc))
+                ca_mean_lst.append(np.mean(ca[e[0]:e[6]]))
+        tp_lst = [tp] * len(ca_max_lst)
+        res_df = pd.DataFrame([ca_max_lst, ca_min_lst, ca_mean_lst, tp_lst], 
+                              index=['max', 'min', 'mean', 'type']).T
+        with open(res_p/resname, 'wb') as f:
+            pickle.dump(res_df, f)
+
 
 if __name__ == '__main__':
     arg: List = sys.argv
@@ -726,3 +788,8 @@ if __name__ == '__main__':
         channel = arg[5]
         magnif = float(arg[6])
         norm.time_bifurcation_all(filename, channel, magnif)
+    elif method == 'calc_calcium':
+        t_filename = arg[5]
+        channel = arg[6]
+        tp = arg[7]
+        norm.calc_cal(filename, t_filename, channel, tp)

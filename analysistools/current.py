@@ -1193,8 +1193,10 @@ class RAN:
         for i in tqdm(res_b_df.index):
             param_c = copy(param)
             param_c[channel] = param_c[channel] * i / 1000
-            self.set_params(param_c.drop(['g_kl', 'g_nal']))
-            self.model.set_params(param_c.drop(['g_kl', 'g_nal']))
+            # self.set_params(param_c.drop(['g_kl', 'g_nal']))
+            # self.model.set_params(param_c.drop(['g_kl', 'g_nal']))
+            self.set_params(param_c)
+            self.model.set_params(param_c)
             if channel == 'g_kl' or channel == 'g_nal':
                 self.leak.set_gk(param_c['g_kl'])
                 self.leak.set_gna(param_c['g_nal'])
@@ -1208,9 +1210,10 @@ class RAN:
             s, _ = self.model.run_odeint(samp_len=samp_len)
             v_sq = self.fs.square_wave(s[e[0]:e[6], 0], spike='bottom')
             if mode == 'proportion':  # proportion against whole inward/outward current
-                ip_out, ip_in = self.get_p(s[e[0]:e[6], :])
-                i_kl_p, i_kvsi_p, i_kca_p = ip_out
-                i_nal_p, i_cav_p, i_nap_p = ip_in
+                ip_in, ip_out = self.get_p(s[e[0]:e[6], :])
+                # i_leak[0], i_kl[1], i_nal[2], i_kvhh[3], i_cav[4], i_nap[5], i_kca[6]
+                i_kl_p, i_kvsi_p, i_kca_p = (ip_out[1], ip_out[3], ip_out[6])
+                i_nal_p, i_cav_p, i_nap_p = (ip_in[2], ip_in[4], ip_in[5])
                 data_dic = {
                     'kleak': i_kl_p, 
                     'kvsi': i_kvsi_p, 

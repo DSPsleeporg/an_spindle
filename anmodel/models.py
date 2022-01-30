@@ -782,17 +782,18 @@ class Xmodel(ANmodel):
             is different from those designated in params.
         """
         channel_param: str
-        for channel_param in list(params.keys())[:-1]:
+        param_lst = list(params.keys())
+        if 't_ca' in param_lst:  # or if 't_ca' in params.keys():
+            self.tau_ca = float(params['t_ca'])
+            param_lst.remove('t_ca')
+        else:
+            self.tau_ca = float('inf')
+        for channel_param in param_lst:
             channel_name: str = channel_param[2:]
             if self.channel_bool[channel_name]:
                 self.channel[channel_name].set_g(float(params[channel_param]))
             else:
                 raise AttributeError('Model does not match parameter sets')
-
-        if 't_ca' == list(params.keys())[-1]:  # or if 't_ca' in params.keys():
-            self.tau_ca = float(params['t_ca'])
-        else:
-            self.tau_ca = float('inf')
         # self.leak.set_div()
 
     def get_params(self) -> Dict:

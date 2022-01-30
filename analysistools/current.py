@@ -1193,10 +1193,12 @@ class RAN:
         for i in tqdm(res_b_df.index):
             param_c = copy(param)
             param_c[channel] = param_c[channel] * i / 1000
-            # self.set_params(param_c.drop(['g_kl', 'g_nal']))
-            # self.model.set_params(param_c.drop(['g_kl', 'g_nal']))
-            self.set_params(param_c)
-            self.model.set_params(param_c)
+            if channel == 'g_kl' or channel == 'g_nal':
+                self.set_params(param_c.drop(['g_kl', 'g_nal']))
+                self.model.set_params(param_c.drop(['g_kl', 'g_nal']))
+            else:
+                self.set_params(param_c)
+                self.model.set_params(param_c)
             if channel == 'g_kl' or channel == 'g_nal':
                 self.leak.set_gk(param_c['g_kl'])
                 self.leak.set_gna(param_c['g_nal'])

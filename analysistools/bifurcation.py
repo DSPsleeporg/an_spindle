@@ -61,7 +61,7 @@ class Analysis:
             self.model = anmodel.models.Xmodel(channel_bool, ion, concentration)
         self.model.set_params(self.param)
 
-        self.samp_freq = 10000
+        self.samp_freq = 100000
         self.l_pad = 0.1
         self.v_pad = 10
 
